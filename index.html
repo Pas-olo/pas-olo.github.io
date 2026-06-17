@@ -23,13 +23,12 @@
     --shadow-pop: 0 8px 28px rgba(0,0,0,0.14);
     --shadow-soft: 0 4px 16px rgba(0,0,0,0.1);
 
-    /* Échelle d'espacement unique — tout padding/gap de la sidebar pioche ici */
     --space-1: 4px;
     --space-2: 8px;
     --space-3: 12px;
     --space-4: 16px;
     --space-5: 20px;
-    --space-section: 16px; /* air entre deux sections de la sidebar (titre + bloc) */
+    --space-section: 16px;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -112,11 +111,7 @@
     display: flex; align-items: center; gap: 5px;
   }
 
-  /* ───────────────────────── SIDEBAR ─────────────────────────
-     Échelle d'espacement unique (--space-1..5) pour que tout s'aligne :
-     padding externe de la sidebar, padding interne des cards, et gap
-     entre sections utilisent tous la même grille au lieu de valeurs
-     ad-hoc (0.45rem, 0.3rem, 7px...). */
+  /* ───────────────────────── SIDEBAR ───────────────────────── */
   .sidebar {
     width: 300px; flex-shrink: 0;
     background: var(--surface);
@@ -160,7 +155,6 @@
   .stat-value { font-size: 1.3rem; font-weight: 700; line-height: 1; }
   .stat-label { font-size: 0.66rem; color: var(--muted); margin-top: 3px; }
 
-  /* Pays — version compacte avec action "voir tous" */
   .countries-list { display: flex; flex-wrap: wrap; gap: var(--space-1); }
   .country-tag {
     background: var(--surface2); border: 1px solid var(--border);
@@ -175,9 +169,6 @@
   }
   .country-tag-more:hover { background: #eaf3fc; border-color: var(--accent); }
 
-  /* Transport : le libellé reprend désormais la couleur du mode (info.color),
-     posée inline via style="color:..." dans le JS — comme l'icône et la barre,
-     pour que les trois éléments d'une ligne parlent le même langage visuel. */
   .transport-list { display: flex; flex-direction: column; gap: var(--space-2); }
   .transport-row { display: flex; align-items: center; gap: var(--space-2); }
   .transport-icon {
@@ -190,10 +181,6 @@
   .transport-bar { height: 100%; border-radius: 3px; }
   .transport-km { font-size: 0.7rem; color: var(--muted); min-width: 48px; text-align: right; }
 
-  /* Trajets récents : padding horizontal aligné sur le reste de la sidebar
-     (les cards au-dessus respirent avec --space-3 ; avant, les trip-item
-     avaient un padding minuscule de 0.3rem qui les collait au bord et les
-     décalait visuellement par rapport aux cards juste au-dessus). */
   .trips-list { display: flex; flex-direction: column; }
   .trip-item {
     display: flex; align-items: center; gap: var(--space-2);
@@ -232,7 +219,7 @@
     100% { box-shadow: 0 0 0 0 rgba(39, 174, 96, 0); }
   }
 
-  /* ───────────────────────── MODALE "TOUS LES PAYS" ───────────────────────── */
+  /* ───────────────────────── MODALE ───────────────────────── */
   .modal-overlay {
     position: fixed; inset: 0;
     background: rgba(20, 18, 14, 0.45);
@@ -296,25 +283,7 @@
 </div>
 
 <script>
-
-fetch('data.json')
-  .then(response => {
-    if (!response.ok) throw new Error("Erreur de chargement");
-    return response.json();
-  })
-  .then(data => {
-    // 1. On récupère les éléments du HTML
-    const dateElement = document.getElementById('date-update');
-    const kmElement = document.getElementById('km-total');
-
-    // 2. On leur injecte les données du JSON
-    if (dateElement) dateElement.innerText = data.updated_at;
-    if (kmElement) kmElement.innerText = data.stats.total_km;
-    
-    // Si tu as besoin de voir la liste des pays plus tard :
-    console.log("Pays visités :", data.stats.countries);
-  })
-  .catch(error => console.error("Erreur de rendu :", error));
+const sidebarContent = document.getElementById('sidebar-content');
 
 if (typeof L === 'undefined') {
   sidebarContent.innerHTML = `<div class="no-data">❌ <strong>Erreur Leaflet</strong><br>Vérifie ta connexion Internet.</div>`;
@@ -335,10 +304,8 @@ function formatDate(s) {
   return `${parseInt(d)} ${mo[parseInt(m) - 1]} ${y}`;
 }
 
-// ── DRAPEAUX ─────────────────────────────────────────────────────
-// Continent attribué à chaque pays, utilisé pour le regroupement dans la modale "tous les pays".
+// ── DRAPEAUX / BASE DE DONNÉES PAYS ────────────────────────────────
 const COUNTRY_DB = {
-  // Europe
   "Albania": ["🇦🇱","Europe"], "Albanie": ["🇦🇱","Europe"], "Andorra": ["🇦🇩","Europe"], "Andorre": ["🇦🇩","Europe"],
   "Austria": ["🇦🇹","Europe"], "Autriche": ["🇦🇹","Europe"], "Belarus": ["🇧🇾","Europe"], "Biélorussie": ["🇧🇾","Europe"],
   "Belgium": ["🇧🇪","Europe"], "Belgique": ["🇧🇪","Europe"], "Bosnia and Herzegovina": ["🇧🇦","Europe"], "Bosnie-Herzégovine": ["🇧🇦","Europe"],
@@ -361,8 +328,6 @@ const COUNTRY_DB = {
   "Sweden": ["🇸🇪","Europe"], "Suède": ["🇸🇪","Europe"], "Switzerland": ["🇨🇭","Europe"], "Suisse": ["🇨🇭","Europe"],
   "Ukraine": ["🇺🇦","Europe"], "United Kingdom": ["🇬🇧","Europe"], "Royaume-Uni": ["🇬🇧","Europe"], "UK": ["🇬🇧","Europe"],
   "Vatican City": ["🇻🇦","Europe"], "Vatican": ["🇻🇦","Europe"],
-
-  // Amériques
   "Antigua and Barbuda": ["🇦🇬","Amériques"], "Argentina": ["🇦🇷","Amériques"], "Argentine": ["🇦🇷","Amériques"],
   "Bahamas": ["🇧🇸","Amériques"], "Barbados": ["🇧🇧","Amériques"], "Barbade": ["🇧🇧","Amériques"],
   "Belize": ["🇧🇿","Amériques"], "Bolivia": ["🇧🇴","Amériques"], "Bolivie": ["🇧🇴","Amériques"],
@@ -379,8 +344,6 @@ const COUNTRY_DB = {
   "Suriname": ["🇸🇷","Amériques"], "Trinidad and Tobago": ["🇹🇹","Amériques"], "Trinité-et-Tobago": ["🇹🇹","Amériques"],
   "United States": ["🇺🇸","Amériques"], "United States of America": ["🇺🇸","Amériques"], "USA": ["🇺🇸","Amériques"], "États-Unis": ["🇺🇸","Amériques"],
   "Uruguay": ["🇺🇾","Amériques"], "Venezuela": ["🇻🇪","Amériques"],
-
-  // Asie & Moyen-Orient
   "Afghanistan": ["🇦🇫","Asie"], "Armenia": ["🇦🇲","Asie"], "Arménie": ["🇦🇲","Asie"], "Azerbaijan": ["🇦🇿","Asie"], "Azerbaïdjan": ["🇦🇿","Asie"],
   "Bahrain": ["🇧🇭","Asie"], "Bahreïn": ["🇧🇭","Asie"], "Bangladesh": ["🇧🇩","Asie"], "Bhutan": ["🇧🇹","Asie"], "Bhoutan": ["🇧🇹","Asie"],
   "Brunei": ["🇧🇳","Asie"], "Cambodia": ["🇰🇭","Asie"], "Cambodge": ["🇰🇭","Asie"], "China": ["🇨🇳","Asie"], "Chine": ["🇨🇳","Asie"],
@@ -398,8 +361,6 @@ const COUNTRY_DB = {
   "East Timor": ["🇹🇱","Asie"], "Turkey": ["🇹🇷","Asie"], "Turquie": ["🇹🇷","Asie"], "Turkmenistan": ["🇹🇲","Asie"], "Turkménistan": ["🇹🇲","Asie"],
   "United Arab Emirates": ["🇦🇪","Asie"], "Émirats Arabes Unis": ["🇦🇪","Asie"], "Uzbekistan": ["🇺🇿","Asie"], "Ouzbékistan": ["🇺🇿","Asie"],
   "Vietnam": ["🇻🇳","Asie"], "Yemen": ["🇾🇪","Asie"], "Yémen": ["🇾🇪","Asie"],
-
-  // Afrique
   "Algeria": ["🇩🇿","Afrique"], "Algérie": ["🇩🇿","Afrique"], "Angola": ["🇦🇴","Afrique"], "Benin": ["🇧🇯","Afrique"], "Bénin": ["🇧🇯","Afrique"],
   "Botswana": ["🇧🇼","Afrique"], "Burkina Faso": ["🇧🇫","Afrique"], "Burundi": ["🇧🇮","Afrique"], "Cameroon": ["🇨🇲","Afrique"], "Cameroun": ["🇨🇲","Afrique"],
   "Cape Verde": ["🇨🇻","Afrique"], "Cap-Vert": ["🇨🇻","Afrique"], "Central African Republic": ["🇨🇫","Afrique"], "République Centrafricaine": ["🇨🇫","Afrique"],
@@ -420,14 +381,13 @@ const COUNTRY_DB = {
   "Sudan": ["🇸🇩","Afrique"], "Soudan": ["🇸🇩","Afrique"], "Tanzania": ["🇹🇿","Afrique"], "Tanzanie": ["🇹🇿","Afrique"],
   "Togo": ["🇹🇬","Afrique"], "Tunisia": ["🇹🇳","Afrique"], "Tunisie": ["🇹🇳","Afrique"], "Uganda": ["🇺🇬","Afrique"], "Ouganda": ["🇺🇬","Afrique"],
   "Zambia": ["🇿🇲","Afrique"], "Zambie": ["🇿🇲","Afrique"], "Zimbabwe": ["🇿🇼","Afrique"],
-
-  // Océanie
   "Australia": ["🇦🇺","Océanie"], "Australie": ["🇦🇺","Océanie"], "Fiji": ["🇫🇯","Océanie"], "Fidji": ["🇫🇯","Océanie"],
   "Kiribati": ["🇰🇮","Océanie"], "Marshall Islands": ["🇲🇭","Océanie"], "Micronesia": ["🇫🇲","Océanie"], "Nauru": ["🇳🇷","Océanie"],
   "New Zealand": ["🇳🇿","Océanie"], "Nouvelle-Zélande": ["🇳🇿","Océanie"], "Palau": ["🇵🇼","Océanie"],
   "Papua New Guinea": ["🇵🇬","Océanie"], "Papouasie-Nouvelle-Guinée": ["🇵🇬","Océanie"], "Samoa": ["🇼🇸","Océanie"],
   "Solomon Islands": ["🇸🇧","Océanie"], "Tonga": ["🇹🇴","Océanie"], "Tuvalu": ["🇹🇻","Océanie"], "Vanuatu": ["🇻🇺","Océanie"]
 };
+
 function flag(country) {
   if (!country) return '🏳️';
   if (COUNTRY_DB[country]) return COUNTRY_DB[country][0];
@@ -436,6 +396,7 @@ function flag(country) {
   }
   return '🏳️';
 }
+
 function continentOf(country) {
   if (!country) return 'Autre';
   if (COUNTRY_DB[country]) return COUNTRY_DB[country][1];
@@ -459,13 +420,12 @@ L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r
 }).addTo(map);
 
 let currentMarker = null;
-let tripLayers = []; // { layer, trip, index } pour retrouver/surligner un trajet depuis la sidebar
+let tripLayers = [];
 
 function flyToCoords(lon, lat, zoom = 6) {
   map.flyTo([lat, lon], zoom, { animate: true, duration: 1.2 });
 }
 
-// Construit le contenu HTML de la popup de détail d'un trajet
 function tripPopupHTML(t) {
   return `
     <div class="trip-popup-card">
@@ -477,13 +437,12 @@ function tripPopupHTML(t) {
       <div class="tp-meta">
         <span class="badge badge-date">📅 ${formatDate(t.date)}</span>
         <span class="badge badge-km">📏 ${t.km.toLocaleString('fr')} km</span>
-        <span class="badge badge-tp">${t.emoji} ${t.label}</span>
+        <span class="badge badge-tp">${t.emoji || '✈️'} ${t.label || 'Voyage'}</span>
       </div>
       <div class="tp-country">${flag(t.country)} ${t.country || 'Pays inconnu'}</div>
     </div>`;
 }
 
-// Rendu des tracés sur Leaflet — chaque trajet devient cliquable et affiche un détail
 function drawLeafletRoutes(trips) {
   trips.forEach((t, i) => {
     if (!(t.allCoords && t.allCoords.length >= 2)) return;
@@ -499,7 +458,6 @@ function drawLeafletRoutes(trips) {
       lineJoin: 'round'
     }).addTo(map);
 
-    // Tracé "fantôme" plus large invisible pour faciliter le clic/hover sur la ligne
     const hitArea = L.polyline(latLngs, {
       color: '#000000',
       weight: 16,
@@ -513,16 +471,11 @@ function drawLeafletRoutes(trips) {
     hitArea.on('mouseover', () => layer.setStyle({ weight: baseWeight + 3, opacity: 1 }));
     hitArea.on('mouseout',  () => { if (!layer._isActive) layer.setStyle({ weight: baseWeight, opacity: 0.85 }); });
     hitArea.on('click', () => highlightTrip(i));
-    hitArea.getElement && hitArea.on('add', () => {
-      const el = hitArea.getElement();
-      if (el) el.style.cursor = 'pointer';
-    });
 
     tripLayers.push({ layer, hitArea, trip: t, index: i });
   });
 }
 
-// Mise en surbrillance d'un trajet (depuis la carte ou la sidebar) + ouverture popup
 function highlightTrip(index) {
   tripLayers.forEach(({ layer }) => {
     layer._isActive = false;
@@ -551,7 +504,6 @@ function setPulseMarker(lon, lat) {
   currentMarker = L.marker([lat, lon], { icon: pulseIcon }).addTo(map);
 }
 
-// ── MODALE "TOUS LES PAYS" ────────────────────────────────────────
 function openCountriesModal(countries) {
   const byContinent = {};
   countries.forEach(c => {
@@ -583,138 +535,163 @@ function openCountriesModal(countries) {
   const close = () => overlay.remove();
   overlay.querySelector('.modal-close').addEventListener('click', close);
   overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
-  document.addEventListener('keydown', function onEsc(e) {
-    if (e.key === 'Escape') { close(); document.removeEventListener('keydown', onEsc); }
-  });
 }
 
-// ── TRAITEMENT ET RENDU DU CONTENU DE LA SIDEBAR ──────────────────
-function render(trips) {
-  if (!trips || !trips.length) {
-    sidebarContent.innerHTML = `
-      <div class="no-data">
-        <div style="font-size:1.5rem;margin-bottom:0.5rem">⚠️</div>
-        <strong>Données manquantes</strong><br>Lance <code>python update.py</code>
-      </div>`;
-    return;
-  }
-
-  drawLeafletRoutes(trips);
-
-  const latest = trips[0];
-  if (latest.destCoord) {
-    const [lon, lat] = latest.destCoord;
-    setPulseMarker(lon, lat);
-    setTimeout(() => flyToCoords(lon, lat, 5), 500);
-    document.getElementById('tip-city').textContent = `${latest.to} ${flag(latest.country)}`;
-    document.getElementById('tip-date').textContent = `Dernière position · ${latest.country || ''} · ${formatDate(latest.date)}`;
-  }
-
-  // Stats
-  const year = new Date().getFullYear();
-  const yearTrips = trips.filter(t => parseDate(t.date).getFullYear() === year);
-  const yearKm  = yearTrips.reduce((s, t) => s + t.km, 0);
-  const totalKm = trips.reduce((s, t) => s + t.km, 0);
-
-  const countriesMap = new Map();
-  for (const t of trips) {
-    if (t.country && !countriesMap.has(t.country)) {
-      countriesMap.set(t.country, { name: t.country, flag: flag(t.country) });
+// ── CHARGEMENT DYNAMIQUE DU JSON ET RENDU DE LA PAGE ──────────────────
+fetch('data.json')
+  .then(response => {
+    if (!response.ok) throw new Error("Erreur de chargement du JSON");
+    return response.json();
+  })
+  .then(data => {
+    // Si pas de trajets dans le JSON, on affiche l'erreur générique
+    if (!data.trips || !data.trips.length) {
+      sidebarContent.innerHTML = `<div class="no-data">⚠️ Données manquantes</div>`;
+      return;
     }
-  }
-  const countries = [...countriesMap.values()];
-  const COUNTRIES_PREVIEW_COUNT = 8;
-  const countriesPreview = countries.slice(0, COUNTRIES_PREVIEW_COUNT);
-  const countriesHidden = countries.length - countriesPreview.length;
 
-  const byType = {};
-  for (const t of trips) {
-    if (!byType[t.type]) byType[t.type] = { km: 0, count: 0, label: t.label, emoji: t.emoji, color: t.color };
-    byType[t.type].km += t.km; byType[t.type].count++;
-  }
-  const maxKm = Math.max(...Object.values(byType).map(b => b.km), 1);
-  const recent = trips.slice(0, 10);
+    const trips = data.trips;
+    drawLeafletRoutes(trips);
 
-  sidebarContent.innerHTML = `
-    <div class="sidebar-section">
-      <div class="section-label">Dernière position</div>
-      <div class="last-trip" id="last-trip-card">
-        <div class="trip-route">
-          <span class="trip-from">${latest.from}</span>
-          <span class="trip-arrow">→</span>
-          <span style="color:var(--pulse);font-weight:600">${latest.to}</span>
+    // Positionner le marqueur sur le dernier voyage
+    const latest = trips[0];
+    if (latest.destCoord) {
+      const [lon, lat] = latest.destCoord;
+      setPulseMarker(lon, lat);
+      setTimeout(() => flyToCoords(lon, lat, 5), 500);
+      document.getElementById('tip-city').textContent = `${latest.to} ${flag(latest.country)}`;
+      document.getElementById('tip-date').textContent = `Dernière position · ${latest.country || ''} · ${formatDate(latest.date)}`;
+    }
+
+    // Récupération globale des stats depuis le JSON
+    const totalKm = data.stats.total_km || 0;
+    const yearKm = data.stats.year_km || 0;
+    const yearTripsCount = data.stats.year_trips || 0;
+    const updatedAt = data.updated_at || "Inconnue";
+
+    // Extraire la liste des pays uniques visités
+    const countriesMap = new Map();
+    trips.forEach(t => {
+      if (t.country && !countriesMap.has(t.country)) {
+        countriesMap.set(t.country, { name: t.country, flag: flag(t.country) });
+      }
+    });
+    const countries = [...countriesMap.values()];
+    const COUNTRIES_PREVIEW_COUNT = 8;
+    const countriesPreview = countries.slice(0, COUNTRIES_PREVIEW_COUNT);
+    const countriesHidden = countries.length - countriesPreview.length;
+
+    // Calcul par type de transport
+    const byType = {};
+    trips.forEach(t => {
+      const type = t.type || 'unknown';
+      if (!byType[type]) byType[type] = { km: 0, count: 0, label: t.label || 'Autre', emoji: t.emoji || '✈️', color: t.color || '#4a90d9' };
+      byType[type].km += t.km;
+      byType[type].count++;
+    });
+    const maxKm = Math.max(...Object.values(byType).map(b => b.km), 1);
+
+    // Générer l'HTML complet de la sidebar
+    sidebarContent.innerHTML = `
+      <div class="sidebar-section">
+        <div class="section-label">Dernière position</div>
+        <div class="last-trip" id="last-trip-card">
+          <div class="trip-route">
+            <span class="trip-from">${latest.from}</span>
+            <span class="trip-arrow">→</span>
+            <span style="color:var(--pulse);font-weight:600">${latest.to}</span>
+          </div>
+          <div class="trip-meta">
+            <span class="badge badge-date">📅 ${formatDate(latest.date)}</span>
+            <span class="badge badge-km">📏 ${latest.km.toLocaleString('fr')} km</span>
+            <span class="badge badge-tp">${latest.emoji || '✈️'} ${latest.label || 'Trajet'}</span>
+          </div>
         </div>
-        <div class="trip-meta">
-          <span class="badge badge-date">📅 ${formatDate(latest.date)}</span>
-          <span class="badge badge-km">📏 ${latest.km.toLocaleString('fr')} km</span>
-          <span class="badge badge-tp">${latest.emoji} ${latest.label}</span>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="section-label">Statistiques globales</div>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value">${totalKm.toLocaleString('fr')}</div>
+            <div class="stat-label">KM Totaux</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${yearKm.toLocaleString('fr')}</div>
+            <div class="stat-label">KM cette année</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${yearTripsCount}</div>
+            <div class="stat-label">Trajets cette année</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" style="font-size:0.75rem; word-break:break-all;">${updatedAt}</div>
+            <div class="stat-label">Mise à jour</div>
+          </div>
         </div>
       </div>
-    </div>
-    <div class="sidebar-section">
-      <div class="section-label">Stats ${year}</div>
-      <div class="stats-grid">
-        <div class="stat-card"><div class="stat-value">${yearKm.toLocaleString('fr')}</div><div class="stat-label">km cette année</div></div>
-        <div class="stat-card"><div class="stat-value">${yearTrips.length}</div><div class="stat-label">trajets</div></div>
-        <div class="stat-card"><div class="stat-value">${countries.length}</div><div class="stat-label">pays visités</div></div>
-        <div class="stat-card"><div class="stat-value">${totalKm.toLocaleString('fr')}</div><div class="stat-label">km au total</div></div>
+
+      <div class="sidebar-section">
+        <div class="section-label">Pays visités (${countries.length})</div>
+        <div class="countries-list">
+          ${countriesPreview.map(c => `<div class="country-tag">${c.flag} ${c.name}</div>`).join('')}
+          ${countriesHidden > 0 ? `<button class="country-tag-more" id="btn-more-countries">+${countriesHidden} de plus</button>` : ''}
+        </div>
       </div>
-    </div>
-    <div class="sidebar-section">
-      <div class="section-label">Pays visités</div>
-      <div class="countries-list">
-        ${countriesPreview.map(c => `<div class="country-tag">${c.flag} ${c.name}</div>`).join('')}
-        ${countriesHidden > 0 ? `<div class="country-tag-more" id="countries-more-btn">Voir tous (${countries.length})</div>` : ''}
-      </div>
-    </div>
-    <div class="sidebar-section">
-      <div class="section-label">Par mode de transport</div>
-      <div class="transport-list">
-        ${Object.entries(byType).sort((a, b) => b[1].km - a[1].km).map(([, info]) => `
-          <div class="transport-row">
-            <div class="transport-icon" style="background:${info.color}22">${info.emoji}</div>
-            <div class="transport-label" style="color:${info.color}">${info.label}</div>
-            <div class="transport-bar-wrap"><div class="transport-bar" style="width:${Math.round(info.km / maxKm * 100)}%;background:${info.color}"></div></div>
-            <div class="transport-km">${info.km.toLocaleString('fr')} km</div>
-          </div>`).join('')}
-      </div>
-    </div>
-    <div class="sidebar-section">
-      <div class="section-label">Trajets récents</div>
-      <div class="trips-list">
-        ${recent.map((t, i) => `
-          <div class="trip-item" data-index="${i}">
-            <div class="trip-item-icon" style="background:${t.color}22">${t.emoji}</div>
-            <div class="trip-item-route">
-              <div class="trip-item-from-to">${t.from} → ${t.to}</div>
-              <div class="trip-item-date">${formatDate(t.date)}</div>
+
+      <div class="sidebar-section">
+        <div class="section-label">Modes de transport</div>
+        <div class="transport-list">
+          ${Object.values(byType).map(b => `
+            <div class="transport-row">
+              <div class="transport-icon" style="background:#eaf3fc">${b.emoji}</div>
+              <div class="transport-label" style="color:${b.color}">${b.label}</div>
+              <div class="transport-bar-wrap">
+                <div class="transport-bar" style="width:${(b.km / maxKm) * 100}%; background:${b.color}"></div>
+              </div>
+              <div class="transport-km">${b.km.toLocaleString('fr')} km</div>
             </div>
-            <div class="trip-item-km">${t.km.toLocaleString('fr')} km</div>
-          </div>`).join('')}
+          `).join('')}
+        </div>
       </div>
-    </div>
-  `;
 
-  // Clic sur la carte récap "dernière position" → recentre + ouvre le détail
-  const lastTripCard = document.getElementById('last-trip-card');
-  if (lastTripCard) lastTripCard.addEventListener('click', () => highlightTrip(0));
+      <div class="sidebar-section">
+        <div class="section-label">Trajets récents</div>
+        <div class="trips-list">
+          ${trips.slice(0, 10).map((t, idx) => `
+            <div class="trip-item" data-index="${idx}">
+              <div class="trip-item-icon" style="background:#f5f4f0">${t.emoji || '✈️'}</div>
+              <div class="trip-item-route">
+                <div class="trip-item-from-to">${t.from} → ${t.to}</div>
+                <div class="trip-item-date">${formatDate(t.date)} · ${t.country || ''}</div>
+              </div>
+              <div class="trip-item-km">${t.km.toLocaleString('fr')} km</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
 
-  // Clic sur "Voir tous (N)" → modale groupée par continent
-  const moreBtn = document.getElementById('countries-more-btn');
-  if (moreBtn) moreBtn.addEventListener('click', () => openCountriesModal(countries));
+    // Événements d'interactivité
+    document.getElementById('last-trip-card').addEventListener('click', () => highlightTrip(0));
+    
+    document.querySelectorAll('.trip-item').forEach(el => {
+      el.addEventListener('click', () => {
+        const idx = parseInt(el.getAttribute('data-index'));
+        highlightTrip(idx);
+      });
+    });
 
-  // Clic sur un trajet de la liste → recentre + surligne + ouvre le détail sur la carte
-  document.querySelectorAll('.trip-item').forEach(el => {
-    el.addEventListener('click', () => highlightTrip(parseInt(el.dataset.index, 10)));
+    const btnMore = document.getElementById('btn-more-countries');
+    if (btnMore) {
+      btnMore.addEventListener('click', () => openCountriesModal(countries));
+    }
+
+  })
+  .catch(error => {
+    console.error(error);
+    sidebarContent.innerHTML = `<div class="no-data">❌ Erreur lors de l'affichage des données.</div>`;
   });
-}
-
-// Lancement sécurisé au démarrage
-if (typeof PAOLO_DATA !== 'undefined' && PAOLO_DATA.length) {
-  render(PAOLO_DATA);
-} else {
-  sidebarContent.innerHTML = `<div class="no-data">⚠️ Données introuvables.</div>`;
-}
 </script>
 </body>
 </html>
