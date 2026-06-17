@@ -299,19 +299,23 @@
 
 fetch('data.json')
   .then(response => {
-    if (!response.ok) {
-      throw new Error("Erreur lors du chargement du JSON");
-    }
-    return response.json(); // C'est ici que la magie opère
+    if (!response.ok) throw new Error("Erreur de chargement");
+    return response.json();
   })
   .then(data => {
-    // Ton JSON est maintenant un objet JS valide !
-    console.log(data.updated_at); // Affichera : "17/06/2026 à 12:44"
-    console.log(data.stats.total_km); // Affichera : 120225
+    // 1. On récupère les éléments du HTML
+    const dateElement = document.getElementById('date-update');
+    const kmElement = document.getElementById('km-total');
+
+    // 2. On leur injecte les données du JSON
+    if (dateElement) dateElement.innerText = data.updated_at;
+    if (kmElement) kmElement.innerText = data.stats.total_km;
+    
+    // Si tu as besoin de voir la liste des pays plus tard :
+    console.log("Pays visités :", data.stats.countries);
   })
-  .catch(error => console.error("Erreur :", error));
-// ── SÉCURITÉ IMPORTATION LEAFLET ──────────────────────────────────
-const sidebarContent = document.getElementById('sidebar-content');
+  .catch(error => console.error("Erreur de rendu :", error));
+
 if (typeof L === 'undefined') {
   sidebarContent.innerHTML = `<div class="no-data">❌ <strong>Erreur Leaflet</strong><br>Vérifie ta connexion Internet.</div>`;
   document.getElementById('tip-date').textContent = "Erreur internet.";
