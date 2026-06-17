@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Où est Paolo ?</title>
-<script src="data.json"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
@@ -297,6 +296,20 @@
 </div>
 
 <script>
+
+fetch('data.json')
+  .then(response => {
+    if (!response.ok) {
+      throw new Error("Erreur lors du chargement du JSON");
+    }
+    return response.json(); // C'est ici que la magie opère
+  })
+  .then(data => {
+    // Ton JSON est maintenant un objet JS valide !
+    console.log(data.updated_at); // Affichera : "17/06/2026 à 12:44"
+    console.log(data.stats.total_km); // Affichera : 120225
+  })
+  .catch(error => console.error("Erreur :", error));
 // ── SÉCURITÉ IMPORTATION LEAFLET ──────────────────────────────────
 const sidebarContent = document.getElementById('sidebar-content');
 if (typeof L === 'undefined') {
