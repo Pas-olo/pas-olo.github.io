@@ -283,8 +283,7 @@
 </div>
 
 <script>
-const sidebarContent = document.getElementById('sidebar-content');
-
+const sidebarContent = document.getElementById('sidebar-content'); 
 if (typeof L === 'undefined') {
   sidebarContent.innerHTML = `<div class="no-data">❌ <strong>Erreur Leaflet</strong><br>Vérifie ta connexion Internet.</div>`;
   document.getElementById('tip-date').textContent = "Erreur internet.";
