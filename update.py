@@ -182,7 +182,9 @@ def git_push():
             "-m", f"update data {datetime.now().strftime('%Y-%m-%d %H:%M')}"
         ], check=True)
 
+        subprocess.run(["git", "stash"], check=True)
         subprocess.run(["git", "pull", "--rebase"], check=True)
+        subprocess.run(["git", "stash", "pop"], check=False)
         subprocess.run(["git", "push"], check=True)
 
         print("  ✅ Push OK")
