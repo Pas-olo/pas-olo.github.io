@@ -8,6 +8,27 @@ import json, urllib.request, time, subprocess
 from datetime import datetime
 from pathlib import Path
 
+
+def rdp(pts, epsilon):
+    if len(pts) < 3:
+        return pts
+    start, end = pts[0], pts[-1]
+    dx, dy = end[0] - start[0], end[1] - start[1]
+    norm = (dx*dx + dy*dy) ** 0.5
+    max_d, max_i = 0.0, 0
+    for i in range(1, len(pts) - 1):
+        if norm:
+            d = abs(dy*pts[i][0] - dx*pts[i][1] + end[0]*start[1] - end[1]*start[0]) / norm
+        else:
+            d = ((pts[i][0]-start[0])**2 + (pts[i][1]-start[1])**2) ** 0.5
+        if d > max_d:
+            max_d, max_i = d, i
+    if max_d > epsilon:
+        left  = rdp(pts[:max_i+1], epsilon)
+        right = rdp(pts[max_i:],   epsilon)
+        return left[:-1] + right
+    return [start, end]
+
 # ─── CONFIG ───────────────────────────────────────────────────────
 LAYERS = [
     {"url": "https://umap.openstreetmap.fr/fr/datalayer/1007436/6c83c270-c92c-4cf9-8338-98033e16cd10/",
@@ -27,6 +48,18 @@ CACHE_DIR    = Path(__file__).parent / ".cache"
 
 GEO_FILE = CACHE_DIR / "countries.geojson"
 GEO_URL  = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_admin_0_countries.geojson"
+
+# Epsilon RDP en degrés décimaux.
+# 0.00005 = ~5m d'écart max → qualité haute, ~60-70% de réduction
+# 0.0001  = ~10m            → bon compromis, ~75-80% de réduction
+# 0.0003  = ~30m            → tracés longs (avion), ~85-90%
+RDP_EPSILON = {
+    "avion":   0.0003,
+    "train":   0.0001,
+    "bus":     0.0001,
+    "voiture": 0.0001,
+    "bateau":  0.0003,
+}
 
 
 # ─── POINT-IN-POLYGON ─────────────────────────────────────────────
@@ -92,6 +125,9 @@ def fetch_layer(layer):
         data = json.loads(resp.read().decode())
 
     trips = []
+    epsilon = RDP_EPSILON.get(layer["type"], 0.0001)
+    total_before = 0
+    total_after = 0
 
     for feature in data.get("features", []):
         props = feature.get("properties", {})
@@ -106,10 +142,11 @@ def fetch_layer(layer):
 
         if geom.get("type") == "LineString" and len(coords) >= 2:
             dest_coord = coords[-1][:2]
-            step = max(1, len(coords) // 200)
-            all_coords = [c[:2] for c in coords[::step]]
-            if all_coords[-1] != coords[-1][:2]:
-                all_coords.append(coords[-1][:2])
+            raw = [c[:2] for c in coords]
+            simplified = rdp(raw, epsilon=epsilon)
+            total_before += len(raw)
+            total_after += len(simplified)
+            all_coords = simplified
 
         elif geom.get("type") == "Point":
             dest_coord = coords[:2]
@@ -128,7 +165,8 @@ def fetch_layer(layer):
             "country": "",
         })
 
-    print(f"{len(trips)} trajets")
+    reduction = round((1 - total_after / total_before) * 100) if total_before else 0
+    print(f"{len(trips)} trajets — coords {total_before}→{total_after} pts (-{reduction}%)")
     return trips
 
 
@@ -144,6 +182,7 @@ def git_push():
             "-m", f"update data {datetime.now().strftime('%Y-%m-%d %H:%M')}"
         ], check=True)
 
+        subprocess.run(["git", "pull", "--rebase"], check=True)
         subprocess.run(["git", "push"], check=True)
 
         print("  ✅ Push OK")
@@ -221,7 +260,7 @@ def main():
     }
 
     OUTPUT_FILE.write_text(
-        json.dumps(output, ensure_ascii=False, indent=2),
+        json.dumps(output, ensure_ascii=False, separators=(',', ':')),
         encoding="utf-8"
     )
 
@@ -231,6 +270,26 @@ def main():
 
     print("=" * 52)
 
+from datetime import datetime, timedelta
+def run_daily():
+    while True:
+        print("\n[LOOP] Lancement update.py...")
+
+        try:
+            main()
+        except Exception as e:
+            print("[ERROR]", e)
+
+        now = datetime.now()
+        next_run = (now + timedelta(days=1)).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+
+        sleep_time = (next_run - datetime.now()).total_seconds()
+
+        print(f"[LOOP] Prochain run dans {int(sleep_time)} sec")
+        time.sleep(max(0, sleep_time))
+
 
 if __name__ == "__main__":
-    main()
+    run_daily()
