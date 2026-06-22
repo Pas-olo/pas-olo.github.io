@@ -54,11 +54,11 @@ GEO_URL  = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/maste
 # 0.0001  = ~10m            → bon compromis, ~75-80% de réduction
 # 0.0003  = ~30m            → tracés longs (avion), ~85-90%
 RDP_EPSILON = {
-    "avion":   0.0003,
-    "train":   0.0001,
-    "bus":     0.0001,
-    "voiture": 0.0001,
-    "bateau":  0.0003,
+    "avion":   0.001,
+    "train":   0.0003,
+    "bus":     0.0003,
+    "voiture": 0.0002,
+    "bateau":  0.001,
 }
 
 
@@ -143,7 +143,7 @@ def fetch_layer(layer):
         if geom.get("type") == "LineString" and len(coords) >= 2:
             dest_coord = coords[-1][:2]
             raw = [c[:2] for c in coords]
-            simplified = rdp(raw, epsilon=epsilon)
+            simplified = [[round(x, 4), round(y, 4)] for x, y in rdp(raw, epsilon=epsilon)]
             total_before += len(raw)
             total_after += len(simplified)
             all_coords = simplified
