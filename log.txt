@@ -182,13 +182,103 @@ fatal : ni ceci ni aucun de ses répertoires parents n'est un dépôt git : .g
   ↓ Bateau   … 13 trajets — coords 382→178 pts (-53%)
   ↓ Bus      … 90 trajets — coords 292064→63089 pts (-78%)
   ↓ Voiture  … fatal : ni ceci ni aucun de ses répertoires parents n'est un dépôt git : .git
+<<<<<<< Updated upstream
+=======
+138 trajets — coords 254179→50382 pts (-80%)
+
+  🌍 Résolution pays…
+
+  ✓ 406 trajets — 120,265 km
+  ✓ 9,226 km en 2026 (70 trajets)
+  ✓ 44 pays
+
+  ✅ data.json généré (3898 Ko)
+
+  🚀 Push GitHub...
+  ⚠️ Rien à push ou erreur git (ignoré)
+====================================================
+[LOOP] Prochain run dans 86381 sec
+>>>>>>> Stashed changes
 
 [LOOP] Lancement update.py...
 ====================================================
   Où est Paolo ? — Update data.json + GitHub
 ====================================================
+<<<<<<< Updated upstream
   ↓ Avion    … 10 trajets — coords 3198→639 pts (-80%)
   ↓ Train    … 155 trajets — coords 342144→37474 pts (-89%)
   ↓ Bateau   … 13 trajets — coords 382→107 pts (-72%)
   ↓ Bus      … 91 trajets — coords 296154→34700 pts (-88%)
   ↓ Voiture  … fatal : ni ceci ni aucun de ses répertoires parents n'est un dépôt git : .git
+=======
+  ↓ Avion    … 138 trajets — coords 254179→50382 pts (-80%)
+
+  🌍 Résolution pays…
+
+  ✓ 406 trajets — 120,265 km
+  ✓ 9,226 km en 2026 (70 trajets)
+  ✓ 44 pays
+
+  ✅ data.json généré (3898 Ko)
+
+  🚀 Push GitHub...
+  ⚠️ Rien à push ou erreur git (ignoré)
+====================================================
+[LOOP] Prochain run dans 86386 sec
+
+[LOOP] Lancement update.py...
+====================================================
+  Où est Paolo ? — Update data.json + GitHub
+====================================================
+  ↓ Avion    … 138 trajets — coords 254179→50382 pts (-80%)
+
+  🌍 Résolution pays…
+
+  ✓ 406 trajets — 120,265 km
+  ✓ 9,226 km en 2026 (70 trajets)
+  ✓ 44 pays
+
+  ✅ data.json généré (3898 Ko)
+
+  🚀 Push GitHub...
+  ⚠️ Rien à push ou erreur git (ignoré)
+====================================================
+[LOOP] Prochain run dans 86383 sec
+
+[LOOP] Lancement update.py...
+====================================================
+  Où est Paolo ? — Update data.json + GitHub
+====================================================
+  ↓ Avion    … 138 trajets — coords 254179→50382 pts (-80%)
+
+  🌍 Résolution pays…
+
+  ✓ 406 trajets — 120,265 km
+  ✓ 9,226 km en 2026 (70 trajets)
+  ✓ 44 pays
+
+  ✅ data.json généré (3898 Ko)
+
+  🚀 Push GitHub...
+  ⚠️ Rien à push ou erreur git (ignoré)
+====================================================
+[LOOP] Prochain run dans 85789 sec
+
+[LOOP] Lancement update.py...
+====================================================
+  Où est Paolo ? — Update data.json + GitHub
+====================================================
+  ↓ Avion    … 10 trajets — coords 3198→990 pts (-69%)
+  ↓ Train    … 10 trajets — coords 3198→990 pts (-69%)
+  ↓ Train    … 10 trajets — coords 3198→990 pts (-69%)
+  ↓ Train    … 10 trajets — coords 3198→990 pts (-69%)
+  ↓ Train    … 155 trajets — coords 342144→66890 pts (-80%)
+  ↓ Bateau   … 155 trajets — coords 342144→66890 pts (-80%)
+  ↓ Bateau   … 155 trajets — coords 342144→66890 pts (-80%)
+  ↓ Bateau   … 13 trajets — coords 382→178 pts (-53%)
+  ↓ Bus      … 155 trajets — coords 342144→66890 pts (-80%)
+  ↓ Bateau   … 13 trajets — coords 382→178 pts (-53%)
+  ↓ Bus      … 13 trajets — coords 382→178 pts (-53%)
+  ↓ Bus      … 13 trajets — coords 382→178 pts (-53%)
+  ↓ Bus      … 
+>>>>>>> Stashed changes
