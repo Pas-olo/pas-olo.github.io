@@ -327,7 +327,7 @@ def main():
 
     print(f"\n  ✅ data.json généré ({OUTPUT_FILE.stat().st_size/1024:.0f} Ko)")
 
-    #git_push()
+    git_push()
 
     print("=" * 52)
 
