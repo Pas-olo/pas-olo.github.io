@@ -222,6 +222,7 @@
     .badge-date { background: #eaf3fc; color: #2471a3; }
     .badge-km   { background: #eafaf1; color: #1e8449; }
     .badge-tp   { background: #fdf2f8; color: #7d3c98; }
+    .badge-co2  { background: #eaf6ec; color: #2e7d32; }
 
     .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); }
     .stat-card {
@@ -300,7 +301,6 @@
       color: var(--muted);
       width: 26px;
       flex-shrink: 0;
-      text-transform: uppercase;
       letter-spacing: 0.03em;
     }
     .transport-bar-wrap { flex: 1; height: 4px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
@@ -623,6 +623,7 @@
             <span class="badge badge-date">📅 ${formatDate(t.date)}</span>
             <span class="badge badge-km">📏 ${t.km.toLocaleString('fr')} km</span>
             <span class="badge badge-tp">${t.emoji || '✈️'} ${t.label || 'Voyage'}</span>
+            <span class="badge badge-co2">🌱 ${(t.co2Kg || 0).toLocaleString('fr', {maximumFractionDigits: 1})} kg CO2e</span>
           </div>
           <div class="tp-country">${flag(t.country)} ${t.country || 'Pays inconnu'}</div>
         </div>`;
@@ -823,7 +824,7 @@
             <div class="stat-card" style="--stat-accent:#2e7d32">
               <div class="stat-icon">🌱</div>
               <div class="stat-value">${totalCo2.toLocaleString('fr', {maximumFractionDigits: 0})}</div>
-              <div class="stat-label">Total kg CO2e</div>
+              <div class="stat-label">Total kgCO2e</div>
             </div>
             <div class="stat-card" style="--stat-accent:#27ae60">
               <div class="stat-icon">📅</div>
@@ -862,11 +863,11 @@
                     <div class="transport-val">${b.km.toLocaleString('fr')} km</div>
                   </div>
                   <div class="transport-bar-group">
-                    <span class="transport-bar-tag">CO2</span>
+                    <span class="transport-bar-tag">CO2e</span>
                     <div class="transport-bar-wrap">
                       <div class="transport-bar" style="width:${(b.co2 / maxCo2) * 100}%; background:${b.color}; opacity:0.5"></div>
                     </div>
-                    <div class="transport-val">${b.co2.toLocaleString('fr', {maximumFractionDigits: 0})} kg</div>
+                    <div class="transport-val">${b.co2.toLocaleString('fr', {maximumFractionDigits: 0})} kgCO2e</div>
                   </div>
                 </div>
               </div>
@@ -882,7 +883,7 @@
                 <div class="trip-item-icon" style="background:#eafaf1">${t.emoji || '✈️'}</div>
                 <div class="trip-item-route">
                   <div class="trip-item-from-to">${t.from} → ${t.to}</div>
-                  <div class="trip-item-date">${formatDate(t.date)} · ${t.km} km</div>
+                  <div class="trip-item-date">${formatDate(t.date)} · ${t.km} km · 🌱 ${(t.co2Kg || 0).toLocaleString('fr', {maximumFractionDigits: 1})} kgCO2e</div>
                 </div>
               </div>
             `).join('')}
