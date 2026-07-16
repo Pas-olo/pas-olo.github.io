@@ -54,8 +54,55 @@
     }
     .logo-text { font-size: 1.2rem; font-weight: 700; letter-spacing: -0.3px; }
     .logo-text span { color: var(--pulse); }
-    .live-badge {
+
+    .header-right {
       margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+    }
+
+    .overland-toggle {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      cursor: pointer;
+      user-select: none;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      padding: 4px 10px 4px 4px;
+      border-radius: 20px;
+    }
+    .overland-toggle input { display: none; }
+    .toggle-track {
+      width: 30px;
+      height: 17px;
+      background: #d7d4c8;
+      border-radius: 20px;
+      position: relative;
+      flex-shrink: 0;
+      transition: background 0.2s;
+    }
+    .toggle-thumb {
+      position: absolute;
+      top: 2px; left: 2px;
+      width: 13px; height: 13px;
+      background: white;
+      border-radius: 50%;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.25);
+      transition: transform 0.2s;
+    }
+    .overland-toggle input:checked + .toggle-track {
+      background: var(--pulse);
+    }
+    .overland-toggle input:checked + .toggle-track .toggle-thumb {
+      transform: translateX(13px);
+    }
+
+    .live-badge {
       display: flex;
       align-items: center;
       gap: 5px;
@@ -237,17 +284,28 @@
     }
     .country-tag-more:hover { background: #eaf3fc; border-color: var(--accent); }
 
-    .transport-list { display: flex; flex-direction: column; gap: var(--space-2); }
+    .transport-list { display: flex; flex-direction: column; gap: var(--space-3); }
     .transport-row { display: flex; align-items: center; gap: var(--space-2); }
     .transport-icon {
       width: 24px; height: 24px; border-radius: var(--radius-sm);
       display: flex; align-items: center; justify-content: center;
       font-size: 0.85rem; flex-shrink: 0;
     }
-    .transport-label { font-size: 0.75rem; font-weight: 600; flex: 1; }
-    .transport-bar-wrap { flex: 2; height: 4px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+    .transport-label { font-size: 0.75rem; font-weight: 600; width: 52px; flex-shrink: 0; }
+    .transport-bars { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+    .transport-bar-group { display: flex; align-items: center; gap: var(--space-2); }
+    .transport-bar-tag {
+      font-size: 0.6rem;
+      font-weight: 700;
+      color: var(--muted);
+      width: 26px;
+      flex-shrink: 0;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .transport-bar-wrap { flex: 1; height: 4px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
     .transport-bar { height: 100%; border-radius: 3px; }
-    .transport-km { font-size: 0.7rem; color: var(--muted); min-width: 48px; text-align: right; }
+    .transport-val { font-size: 0.68rem; color: var(--muted); min-width: 58px; text-align: right; flex-shrink: 0; }
 
     .trips-list { display: flex; flex-direction: column; }
     .trip-item {
@@ -329,6 +387,7 @@
       .main { flex-direction: column; }
       #map-wrap { min-height: 55vw; }
       .sidebar { width: 100%; border-left: none; border-top: 1px solid var(--border); max-height: 42vh; }
+      .overland-toggle .toggle-label-text { display: none; }
     }
   </style>
 </head>
@@ -336,7 +395,14 @@
 
   <header>
     <div class="logo-text">📍 Où est <span>Paolo</span> ?</div>
-    <div class="live-badge"><div class="live-dot"></div>En direct</div>
+    <div class="header-right">
+      <label class="overland-toggle" title="N'afficher que les trajets depuis le dernier vol pris">
+        <input type="checkbox" id="overland-toggle" checked>
+        <span class="toggle-track"><span class="toggle-thumb"></span></span>
+        <span class="toggle-label-text">Depuis le dernier vol</span>
+      </label>
+      <div class="live-badge"><div class="live-dot"></div>En direct</div>
+    </div>
   </header>
 
   <div class="main">
@@ -520,6 +586,7 @@
 
     let currentMarker = null;
     let tripLayers = [];
+    const routesLayerGroup = L.layerGroup().addTo(map);
 
     function isMobileLayout() {
       return window.matchMedia('(max-width: 768px)').matches;
@@ -574,7 +641,7 @@
           opacity: 0.85,
           lineCap: 'round',
           lineJoin: 'round'
-        }).addTo(map);
+        }).addTo(routesLayerGroup);
 
         const hitArea = L.polyline(latLngs, {
           color: '#000000',
@@ -582,7 +649,7 @@
           opacity: 0,
           lineCap: 'round',
           lineJoin: 'round'
-        }).addTo(map);
+        }).addTo(routesLayerGroup);
 
         hitArea.bindPopup(tripPopupHTML(t), { className: 'trip-popup', closeButton: true, autoPanPadding: [40, 40] });
 
@@ -655,6 +722,190 @@
       overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
     }
 
+    // ── FILTRAGE "DEPUIS LE DERNIER VOL" ──────────────────────────────
+    // trips est trié du plus récent au plus ancien. On garde tout ce qui
+    // est strictement plus récent que le dernier avion pris (le vol lui-même exclu).
+    function computeOverlandTrips(trips) {
+      const idx = trips.findIndex(t => t.type === 'avion');
+      if (idx === -1) return trips.slice();
+      return trips.slice(0, idx);
+    }
+
+    // ── RENDU PRINCIPAL (carte + sidebar) ─────────────────────────────
+    let allTrips = [];
+    let showOverlandOnly = true;
+
+    function getCurrentTrips() {
+      return showOverlandOnly ? computeOverlandTrips(allTrips) : allTrips;
+    }
+
+    function renderApp(trips) {
+      // Reset carte
+      routesLayerGroup.clearLayers();
+      tripLayers = [];
+
+      if (!trips.length) {
+        sidebarContent.innerHTML = `<div class="no-data">✈️ Aucun trajet overland depuis le dernier vol pour l'instant.</div>`;
+        return;
+      }
+
+      drawLeafletRoutes(trips);
+
+      // Positionner le marqueur sur le dernier trajet de la vue courante
+      const latest = trips[0];
+      if (latest.destCoord) {
+        const [lon, lat] = latest.destCoord;
+        setPulseMarker(lon, lat);
+        setTimeout(() => flyToCoords(lon, lat, 5), 500);
+        document.getElementById('tip-city').textContent = `${latest.to} ${flag(latest.country)}`;
+        document.getElementById('tip-date').textContent = `Dernière position · ${latest.country || ''} · ${formatDate(latest.date)}`;
+      }
+
+      // Stats recalculées sur la vue courante (overland ou complète)
+      const totalKm = trips.reduce((s, t) => s + (t.km || 0), 0);
+      const totalCo2 = trips.reduce((s, t) => s + (t.co2Kg || 0), 0);
+
+      const year = new Date().getFullYear();
+      const tripsThisYear = trips.filter(t => parseDate(t.date).getFullYear() === year);
+      const yearKm = tripsThisYear.reduce((s, t) => s + (t.km || 0), 0);
+      const yearCo2 = tripsThisYear.reduce((s, t) => s + (t.co2Kg || 0), 0);
+
+      const updatedAt = formatRelativeUpdate(window.__updatedAtRaw);
+
+      // Pays visités (sur la vue courante)
+      const countriesMap = new Map();
+      trips.forEach(t => {
+        if (t.country && !countriesMap.has(t.country)) {
+          countriesMap.set(t.country, { name: t.country, flag: flag(t.country) });
+        }
+      });
+      const countries = [...countriesMap.values()];
+      const COUNTRIES_PREVIEW_COUNT = 8;
+      const countriesPreview = countries.slice(0, COUNTRIES_PREVIEW_COUNT);
+      const countriesHidden = countries.length - countriesPreview.length;
+
+      // Répartition par mode de transport (km + CO2e, sur la vue courante)
+      const byType = {};
+      trips.forEach(t => {
+        const type = t.type || 'unknown';
+        if (!byType[type]) byType[type] = { km: 0, co2: 0, label: t.label || 'Autre', emoji: t.emoji || '✈️', color: t.color || '#4a90d9' };
+        byType[type].km += (t.km || 0);
+        byType[type].co2 += (t.co2Kg || 0);
+      });
+      const maxKm = Math.max(...Object.values(byType).map(b => b.km), 1);
+      const maxCo2 = Math.max(...Object.values(byType).map(b => b.co2), 1);
+
+      sidebarContent.innerHTML = `
+        <div class="sidebar-section">
+          <div class="section-label">Dernière position</div>
+          <div class="last-trip" id="last-trip-card">
+            <div class="trip-route">
+              <span class="trip-from">${latest.from}</span>
+              <span class="trip-arrow">→</span>
+              <span style="color:var(--pulse);font-weight:600">${latest.to}</span>
+            </div>
+            <div class="trip-meta">
+              <span class="badge badge-date">📅 ${formatDate(latest.date)}</span>
+              <span class="badge badge-km">📏 ${latest.km.toLocaleString('fr')} km</span>
+              <span class="badge badge-tp">${latest.emoji || '✈️'} ${latest.label || 'Trajet'}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="section-label">Statistiques ${showOverlandOnly ? '(depuis le dernier vol)' : 'globales'}</div>
+          <div class="stats-grid">
+            <div class="stat-card" style="--stat-accent:#4a90d9">
+              <div class="stat-icon">🌍</div>
+              <div class="stat-value">${totalKm.toLocaleString('fr')}</div>
+              <div class="stat-label">Total km</div>
+            </div>
+            <div class="stat-card" style="--stat-accent:#2e7d32">
+              <div class="stat-icon">🌱</div>
+              <div class="stat-value">${totalCo2.toLocaleString('fr', {maximumFractionDigits: 0})}</div>
+              <div class="stat-label">Total kg CO2e</div>
+            </div>
+            <div class="stat-card" style="--stat-accent:#27ae60">
+              <div class="stat-icon">📅</div>
+              <div class="stat-value">${yearKm.toLocaleString('fr')}</div>
+              <div class="stat-label">km cette année</div>
+            </div>
+            <div class="stat-card stat-card-update" style="--stat-accent:#e08e45" title="Mis à jour le ${updatedAt.exact}">
+              <div class="stat-icon">🔄</div>
+              <div class="stat-update-value">${updatedAt.relative}</div>
+              <div class="stat-label">Mise à jour</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="section-label">Pays visités (${countries.length})</div>
+          <div class="countries-list">
+            ${countriesPreview.map(c => `<div class="country-tag">${c.flag} ${c.name}</div>`).join('')}
+            ${countriesHidden > 0 ? `<button class="country-tag-more" id="btn-more-countries">+${countriesHidden} de plus</button>` : ''}
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="section-label">Modes de transport</div>
+          <div class="transport-list">
+            ${Object.values(byType).map(b => `
+              <div class="transport-row">
+                <div class="transport-icon" style="background:#eaf3fc">${b.emoji}</div>
+                <div class="transport-label" style="color:${b.color}">${b.label}</div>
+                <div class="transport-bars">
+                  <div class="transport-bar-group">
+                    <span class="transport-bar-tag">km</span>
+                    <div class="transport-bar-wrap">
+                      <div class="transport-bar" style="width:${(b.km / maxKm) * 100}%; background:${b.color}"></div>
+                    </div>
+                    <div class="transport-val">${b.km.toLocaleString('fr')} km</div>
+                  </div>
+                  <div class="transport-bar-group">
+                    <span class="transport-bar-tag">CO2</span>
+                    <div class="transport-bar-wrap">
+                      <div class="transport-bar" style="width:${(b.co2 / maxCo2) * 100}%; background:${b.color}; opacity:0.5"></div>
+                    </div>
+                    <div class="transport-val">${b.co2.toLocaleString('fr', {maximumFractionDigits: 0})} kg</div>
+                  </div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="section-label">Trajets récents</div>
+          <div class="trips-list">
+            ${trips.slice(0, 10).map((t, idx) => `
+              <div class="trip-item" data-index="${idx}">
+                <div class="trip-item-icon" style="background:#eafaf1">${t.emoji || '✈️'}</div>
+                <div class="trip-item-route">
+                  <div class="trip-item-from-to">${t.from} → ${t.to}</div>
+                  <div class="trip-item-date">${formatDate(t.date)} · ${t.km} km</div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+
+      // Événements d'interaction
+      document.getElementById('last-trip-card').addEventListener('click', () => highlightTrip(0));
+
+      const btnMore = document.getElementById('btn-more-countries');
+      if (btnMore) {
+        btnMore.addEventListener('click', () => openCountriesModal(countries));
+      }
+
+      document.querySelectorAll('.trip-item').forEach(item => {
+        item.addEventListener('click', () => {
+          const idx = parseInt(item.getAttribute('data-index'));
+          highlightTrip(idx);
+        });
+      });
+    }
+
     // ── CHARGEMENT DYNAMIQUE DU JSON ET RENDU DE LA PAGE ──────────────────
     fetch('data.json')
       .then(response => {
@@ -667,144 +918,15 @@
           return;
         }
 
-        const trips = data.trips;
-        drawLeafletRoutes(trips);
+        allTrips = data.trips;
+        window.__updatedAtRaw = data.updated_at;
 
-        // Positionner le marqueur sur le dernier voyage
-        const latest = trips[0];
-        if (latest.destCoord) {
-          const [lon, lat] = latest.destCoord;
-          setPulseMarker(lon, lat);
-          setTimeout(() => flyToCoords(lon, lat, 5), 500);
-          document.getElementById('tip-city').textContent = `${latest.to} ${flag(latest.country)}`;
-          document.getElementById('tip-date').textContent = `Dernière position · ${latest.country || ''} · ${formatDate(latest.date)}`;
-        }
+        renderApp(getCurrentTrips());
 
-        // Récupération globale des stats depuis le JSON
-        const totalKm = data.stats?.total_km || 0;
-        const yearKm = data.stats?.year_km || 0;
-        const yearTripsCount = data.stats?.year_trips || 0;
-        const updatedAt = formatRelativeUpdate(data.updated_at);
-
-        // Extraire la liste des pays uniques visités
-        const countriesMap = new Map();
-        trips.forEach(t => {
-          if (t.country && !countriesMap.has(t.country)) {
-            countriesMap.set(t.country, { name: t.country, flag: flag(t.country) });
-          }
-        });
-        const countries = [...countriesMap.values()];
-        const COUNTRIES_PREVIEW_COUNT = 8;
-        const countriesPreview = countries.slice(0, COUNTRIES_PREVIEW_COUNT);
-        const countriesHidden = countries.length - countriesPreview.length;
-
-        // Calcul par type de transport
-        const byType = {};
-        trips.forEach(t => {
-          const type = t.type || 'unknown';
-          if (!byType[type]) byType[type] = { km: 0, count: 0, label: t.label || 'Autre', emoji: t.emoji || '✈️', color: t.color || '#4a90d9' };
-          byType[type].km += t.km;
-          byType[type].count++;
-        });
-        const maxKm = Math.max(...Object.values(byType).map(b => b.km), 1);
-
-        // Générer l'HTML complet de la sidebar
-        sidebarContent.innerHTML = `
-          <div class="sidebar-section">
-            <div class="section-label">Dernière position</div>
-            <div class="last-trip" id="last-trip-card">
-              <div class="trip-route">
-                <span class="trip-from">${latest.from}</span>
-                <span class="trip-arrow">→</span>
-                <span style="color:var(--pulse);font-weight:600">${latest.to}</span>
-              </div>
-              <div class="trip-meta">
-                <span class="badge badge-date">📅 ${formatDate(latest.date)}</span>
-                <span class="badge badge-km">📏 ${latest.km.toLocaleString('fr')} km</span>
-                <span class="badge badge-tp">${latest.emoji || '✈️'} ${latest.label || 'Trajet'}</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="sidebar-section">
-            <div class="section-label">Statistiques globales</div>
-            <div class="stats-grid">
-              <div class="stat-card" style="--stat-accent:#4a90d9">
-                <div class="stat-icon">🌍</div>
-                <div class="stat-value">${totalKm.toLocaleString('fr')}</div>
-                <div class="stat-label">Total km</div>
-              </div>
-              <div class="stat-card" style="--stat-accent:#27ae60">
-                <div class="stat-icon">📅</div>
-                <div class="stat-value">${yearKm.toLocaleString('fr')}</div>
-                <div class="stat-label">km cette année</div>
-              </div>
-              <div class="stat-card" style="--stat-accent:#7d3c98">
-                <div class="stat-icon">✈️</div>
-                <div class="stat-value">${yearTripsCount}</div>
-                <div class="stat-label">Trajets cette année</div>
-              </div>
-              <div class="stat-card stat-card-update" style="--stat-accent:#e08e45" title="Mis à jour le ${updatedAt.exact}">
-                <div class="stat-icon">🔄</div>
-                <div class="stat-update-value">${updatedAt.relative}</div>
-                <div class="stat-label">Mise à jour</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="sidebar-section">
-            <div class="section-label">Pays visités (${countries.length})</div>
-            <div class="countries-list">
-              ${countriesPreview.map(c => `<div class="country-tag">${c.flag} ${c.name}</div>`).join('')}
-              ${countriesHidden > 0 ? `<button class="country-tag-more" id="btn-more-countries">+${countriesHidden} de plus</button>` : ''}
-            </div>
-          </div>
-
-          <div class="sidebar-section">
-            <div class="section-label">Modes de transport</div>
-            <div class="transport-list">
-              ${Object.values(byType).map(b => `
-                <div class="transport-row">
-                  <div class="transport-icon" style="background:#eaf3fc">${b.emoji}</div>
-                  <div class="transport-label" style="color:${b.color}">${b.label}</div>
-                  <div class="transport-bar-wrap">
-                    <div class="transport-bar" style="width:${(b.km / maxKm) * 100}%; background:${b.color}"></div>
-                  </div>
-                  <div class="transport-km">${b.km.toLocaleString('fr')} km</div>
-                </div>
-              `).join('')}
-            </div>
-          </div>
-
-          <div class="sidebar-section">
-            <div class="section-label">Trajets récents</div>
-            <div class="trips-list">
-              ${trips.slice(0, 10).map((t, idx) => `
-                <div class="trip-item" data-index="${idx}">
-                  <div class="trip-item-icon" style="background:#eafaf1">${t.emoji || '✈️'}</div>
-                  <div class="trip-item-route">
-                    <div class="trip-item-from-to">${t.from} → ${t.to}</div>
-                    <div class="trip-item-date">${formatDate(t.date)} · ${t.km} km</div>
-                  </div>
-                </div>
-              `).join('')}
-            </div>
-          </div>
-        `;
-
-        // Événements d'interaction
-        document.getElementById('last-trip-card').addEventListener('click', () => highlightTrip(0));
-
-        const btnMore = document.getElementById('btn-more-countries');
-        if (btnMore) {
-          btnMore.addEventListener('click', () => openCountriesModal(countries));
-        }
-
-        document.querySelectorAll('.trip-item').forEach(item => {
-          item.addEventListener('click', () => {
-            const idx = parseInt(item.getAttribute('data-index'));
-            highlightTrip(idx);
-          });
+        const overlandToggle = document.getElementById('overland-toggle');
+        overlandToggle.addEventListener('change', () => {
+          showOverlandOnly = overlandToggle.checked;
+          renderApp(getCurrentTrips());
         });
       })
       .catch(err => {

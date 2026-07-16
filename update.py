@@ -61,6 +61,56 @@ RDP_EPSILON = {
     "bateau":  0.001,
 }
 
+# ─── EMPREINTE CARBONE ─────────────────────────────────────────────
+# Facteurs d'émission en kgCO2e/km (kgCO2e/passager.km pour la voiture)
+PLANE_FE_SHORT_HAUL = 0.126   # < 3 700 km, économique
+PLANE_FE_LONG_HAUL  = 0.117   # >= 3 700 km, économique
+PLANE_HAUL_THRESHOLD_KM = 3700
+
+TRAIN_FE = 0.00446
+BOAT_FE  = 0.01871
+CAR_FE   = 0.220  # kgCO2e / passager.km — divisé par le nb de passagers du trajet
+
+# bus_type (valeurs OSM) -> FE kgCO2e/km
+BUS_FE_BY_TYPE = {
+    "minibus":       0.050,
+    "bus couchette": 0.080,
+    "bus route":     0.030,  # car routier grande distance (bien rempli), pas un bus urbain
+}
+BUS_FE_DEFAULT = 0.050  # fallback si bus_type absent/inconnu (= minibus)
+
+
+def compute_co2_kg(layer_type, km, props):
+    """Calcule l'empreinte carbone (kg CO2e) d'un trajet."""
+    if km <= 0:
+        return 0.0
+
+    if layer_type == "avion":
+        fe = PLANE_FE_SHORT_HAUL if km < PLANE_HAUL_THRESHOLD_KM else PLANE_FE_LONG_HAUL
+        return km * fe
+
+    if layer_type == "train":
+        return km * TRAIN_FE
+
+    if layer_type == "bateau":
+        return km * BOAT_FE
+
+    if layer_type == "voiture":
+        try:
+            passengers = int(props.get("car_passenger"))
+        except (TypeError, ValueError):
+            passengers = 1
+        if passengers < 1:
+            passengers = 1
+        return (km * CAR_FE) / passengers
+
+    if layer_type == "bus":
+        bus_type = (props.get("bus_type") or "").strip().lower()
+        fe = BUS_FE_BY_TYPE.get(bus_type, BUS_FE_DEFAULT)
+        return km * fe
+
+    return 0.0
+
 
 # ─── POINT-IN-POLYGON ─────────────────────────────────────────────
 def pip(lon, lat, ring):
@@ -151,11 +201,14 @@ def fetch_layer(layer):
         elif geom.get("type") == "Point":
             dest_coord = coords[:2]
 
+        km = int(props.get("km") or 0)
+        co2_kg = compute_co2_kg(layer["type"], km, props)
+
         trips.append({
             "date": props.get("date", ""),
             "from": props.get("from", ""),
             "to": props.get("to", ""),
-            "km": int(props.get("km") or 0),
+            "km": km,
             "type": layer["type"],
             "label": layer["label"],
             "emoji": layer["emoji"],
@@ -163,6 +216,7 @@ def fetch_layer(layer):
             "destCoord": dest_coord,
             "allCoords": all_coords,
             "country": "",
+            "co2Kg": round(co2_kg, 3),
         })
 
     reduction = round((1 - total_after / total_before) * 100) if total_before else 0
@@ -240,12 +294,16 @@ def main():
 
     # Stats
     total_km = sum(t["km"] for t in all_trips)
+    total_co2_kg = round(sum(t.get("co2Kg", 0) for t in all_trips), 1)
+
     year = datetime.now().year
     year_km = sum(t["km"] for t in all_trips if parse_date(t["date"]).year == year)
-    year_trips = sum(1 for t in all_trips if parse_date(t["date"]).year == year)
+    year_co2_kg = round(
+        sum(t.get("co2Kg", 0) for t in all_trips if parse_date(t["date"]).year == year), 1
+    )
 
-    print(f"\n  ✓ {len(all_trips)} trajets — {total_km:,} km")
-    print(f"  ✓ {year_km:,} km en {year} ({year_trips} trajets)")
+    print(f"\n  ✓ {len(all_trips)} trajets — {total_km:,} km — {total_co2_kg:,} kg CO2e")
+    print(f"  ✓ {year_km:,} km en {year} — {year_co2_kg:,} kg CO2e")
     print(f"  ✓ {len(countries)} pays")
 
     updated_at = datetime.now().strftime("%d/%m/%Y à %H:%M")
@@ -254,8 +312,9 @@ def main():
         "updated_at": updated_at,
         "stats": {
             "total_km": total_km,
+            "total_co2_kg": total_co2_kg,
             "year_km": year_km,
-            "year_trips": year_trips,
+            "year_co2_kg": year_co2_kg,
             "countries": countries
         },
         "trips": all_trips
@@ -268,7 +327,7 @@ def main():
 
     print(f"\n  ✅ data.json généré ({OUTPUT_FILE.stat().st_size/1024:.0f} Ko)")
 
-    git_push()
+    #git_push()
 
     print("=" * 52)
 
