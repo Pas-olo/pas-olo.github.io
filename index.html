@@ -623,7 +623,7 @@
             <span class="badge badge-date">📅 ${formatDate(t.date)}</span>
             <span class="badge badge-km">📏 ${t.km.toLocaleString('fr')} km</span>
             <span class="badge badge-tp">${t.emoji || '✈️'} ${t.label || 'Voyage'}</span>
-            <span class="badge badge-co2">🌱 ${(t.co2Kg || 0).toLocaleString('fr', {maximumFractionDigits: 1})} kg CO2e</span>
+            <span class="badge badge-co2">🌱 ${(t.co2Kg || 0).toLocaleString('fr', {maximumFractionDigits: 1})} kgCO2e</span>
           </div>
           <div class="tp-country">${flag(t.country)} ${t.country || 'Pays inconnu'}</div>
         </div>`;
@@ -883,7 +883,7 @@
                 <div class="trip-item-icon" style="background:#eafaf1">${t.emoji || '✈️'}</div>
                 <div class="trip-item-route">
                   <div class="trip-item-from-to">${t.from} → ${t.to}</div>
-                  <div class="trip-item-date">${formatDate(t.date)} · ${t.km} km · 🌱 ${(t.co2Kg || 0).toLocaleString('fr', {maximumFractionDigits: 1})} kgCO2e</div>
+                  <div class="trip-item-date">${formatDate(t.date)} · ${t.km} km ·  ${(t.co2Kg || 0).toLocaleString('fr', {maximumFractionDigits: 1})} kgCO2e</div>
                 </div>
               </div>
             `).join('')}

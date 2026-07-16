@@ -183,7 +183,10 @@ fatal : ni ceci ni aucun de ses répertoires parents n'est un dépôt git : .g
   ↓ Bus      … 90 trajets — coords 292064→63089 pts (-78%)
   ↓ Voiture  … fatal : ni ceci ni aucun de ses répertoires parents n'est un dépôt git : .git
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 =======
+=======
+>>>>>>> Stashed changes
 138 trajets — coords 254179→50382 pts (-80%)
 
   🌍 Résolution pays…
@@ -198,6 +201,9 @@ fatal : ni ceci ni aucun de ses répertoires parents n'est un dépôt git : .g
   ⚠️ Rien à push ou erreur git (ignoré)
 ====================================================
 [LOOP] Prochain run dans 86381 sec
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 
 [LOOP] Lancement update.py...
@@ -205,12 +211,15 @@ fatal : ni ceci ni aucun de ses répertoires parents n'est un dépôt git : .g
   Où est Paolo ? — Update data.json + GitHub
 ====================================================
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
   ↓ Avion    … 10 trajets — coords 3198→639 pts (-80%)
   ↓ Train    … 155 trajets — coords 342144→37474 pts (-89%)
   ↓ Bateau   … 13 trajets — coords 382→107 pts (-72%)
   ↓ Bus      … 91 trajets — coords 296154→34700 pts (-88%)
   ↓ Voiture  … fatal : ni ceci ni aucun de ses répertoires parents n'est un dépôt git : .git
 =======
+=======
+>>>>>>> Stashed changes
   ↓ Avion    … 138 trajets — coords 254179→50382 pts (-80%)
 
   🌍 Résolution pays…
@@ -280,6 +289,7 @@ fatal : ni ceci ni aucun de ses répertoires parents n'est un dépôt git : .g
   ↓ Bateau   … 13 trajets — coords 382→178 pts (-53%)
   ↓ Bus      … 13 trajets — coords 382→178 pts (-53%)
   ↓ Bus      … 13 trajets — coords 382→178 pts (-53%)
+<<<<<<< Updated upstream
   ↓ Bus      … 
 >>>>>>> Stashed changes
 
@@ -5042,3 +5052,6 @@ fatal : ni ceci ni aucun de ses répertoires parents n'est un dépôt git : .g
   ↓ Bateau   … 13 trajets — coords 382→107 pts (-72%)
   ↓ Bus      … 92 trajets — coords 298092→35081 pts (-88%)
   ↓ Voiture  … fatal : ni ceci ni aucun de ses répertoires parents n'est un dépôt git : .git
+=======
+  ↓ Bus      … 
+>>>>>>> Stashed changes
