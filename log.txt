@@ -5068,3 +5068,13 @@ fatal : ni ceci ni aucun de ses répertoires parents n'est un dépôt git : .g
 =======
   ↓ Bus      … 
 >>>>>>> Stashed changes
+
+[LOOP] Lancement update.py...
+====================================================
+  Où est Paolo ? — Update data.json + GitHub
+====================================================
+  ↓ Avion    … 10 trajets — coords 3198→639 pts (-80%)
+  ↓ Train    … 155 trajets — coords 342144→37474 pts (-89%)
+  ↓ Bateau   … 13 trajets — coords 382→107 pts (-72%)
+  ↓ Bus      … 92 trajets — coords 298092→35081 pts (-88%)
+  ↓ Voiture  … fatal : ni ceci ni aucun de ses répertoires parents n'est un dépôt git : .git
