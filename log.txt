@@ -5079,7 +5079,10 @@ fatal : ni ceci ni aucun de ses répertoires parents n'est un dépôt git : .g
   ↓ Bus      … 92 trajets — coords 298092→35081 pts (-88%)
   ↓ Voiture  … fatal : ni ceci ni aucun de ses répertoires parents n'est un dépôt git : .git
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 =======
+=======
+>>>>>>> Stashed changes
 156 trajets — coords 273490→38763 pts (-86%)
 
   🌍 Résolution pays…
@@ -5103,6 +5106,7 @@ fatal : ni ceci ni aucun de ses répertoires parents n'est un dépôt git : .g
   ↓ Train    … 155 trajets — coords 342144→37474 pts (-89%)
   ↓ Bateau   … 13 trajets — coords 382→107 pts (-72%)
   ↓ Bus      … 92 trajets — coords 298092→35081 pts (-88%)
+<<<<<<< Updated upstream
   ↓ Voiture  … 
 >>>>>>> Stashed changes
 
@@ -5148,4 +5152,17 @@ fatal : ni ceci ni aucun de ses répertoires parents n'est un dépôt git : .g
   ↓ Train    … 155 trajets — coords 342144→37474 pts (-89%)
   ↓ Bateau   … 13 trajets — coords 382→107 pts (-72%)
   ↓ Bus      … 93 trajets — coords 299161→35248 pts (-88%)
+  ↓ Voiture  … fatal : ni ceci ni aucun de ses répertoires parents n'est un dépôt git : .git
+=======
+  ↓ Voiture  … 
+>>>>>>> Stashed changes
+
+[LOOP] Lancement update.py...
+====================================================
+  Où est Paolo ? — Update data.json + GitHub
+====================================================
+  ↓ Avion    … 10 trajets — coords 3198→639 pts (-80%)
+  ↓ Train    … 156 trajets — coords 345856→38192 pts (-89%)
+  ↓ Bateau   … 13 trajets — coords 382→107 pts (-72%)
+  ↓ Bus      … 95 trajets — coords 302847→35877 pts (-88%)
   ↓ Voiture  … fatal : ni ceci ni aucun de ses répertoires parents n'est un dépôt git : .git
