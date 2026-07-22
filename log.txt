@@ -5078,3 +5078,74 @@ fatal : ni ceci ni aucun de ses répertoires parents n'est un dépôt git : .g
   ↓ Bateau   … 13 trajets — coords 382→107 pts (-72%)
   ↓ Bus      … 92 trajets — coords 298092→35081 pts (-88%)
   ↓ Voiture  … fatal : ni ceci ni aucun de ses répertoires parents n'est un dépôt git : .git
+<<<<<<< Updated upstream
+=======
+156 trajets — coords 273490→38763 pts (-86%)
+
+  🌍 Résolution pays…
+
+  ✓ 426 trajets — 125,127 km — 7,551.3 kg CO2e
+  ✓ 14,065 km en 2026 — 660.0 kg CO2e
+  ✓ 46 pays
+
+  ✅ data.json généré (2012 Ko)
+
+  🚀 Push GitHub...
+  ⚠️ Rien à push ou erreur git (ignoré)
+====================================================
+[LOOP] Prochain run dans 85790 sec
+
+[LOOP] Lancement update.py...
+====================================================
+  Où est Paolo ? — Update data.json + GitHub
+====================================================
+  ↓ Avion    … 10 trajets — coords 3198→639 pts (-80%)
+  ↓ Train    … 155 trajets — coords 342144→37474 pts (-89%)
+  ↓ Bateau   … 13 trajets — coords 382→107 pts (-72%)
+  ↓ Bus      … 92 trajets — coords 298092→35081 pts (-88%)
+  ↓ Voiture  … 
+>>>>>>> Stashed changes
+
+[LOOP] Lancement update.py...
+====================================================
+  Où est Paolo ? — Update data.json + GitHub
+====================================================
+  ↓ Avion    … 10 trajets — coords 3198→639 pts (-80%)
+  ↓ Train    … 155 trajets — coords 342144→37474 pts (-89%)
+  ↓ Bateau   … 13 trajets — coords 382→107 pts (-72%)
+  ↓ Bus      … 93 trajets — coords 299161→35248 pts (-88%)
+  ↓ Voiture  … fatal : ni ceci ni aucun de ses répertoires parents n'est un dépôt git : .git
+156 trajets — coords 273490→38763 pts (-86%)
+
+  🌍 Résolution pays…
+
+  ✓ 427 trajets — 125,480 km — 7,561.9 kg CO2e
+  ✓ 14,418 km en 2026 — 670.6 kg CO2e
+  ✓ 46 pays
+
+  ✅ data.json généré (2016 Ko)
+
+  🚀 Push GitHub...
+  ⚠️ Rien à push ou erreur git (ignoré)
+====================================================
+[LOOP] Prochain run dans 85789 sec
+
+[LOOP] Lancement update.py...
+====================================================
+  Où est Paolo ? — Update data.json + GitHub
+====================================================
+  ↓ Avion    … 10 trajets — coords 3198→639 pts (-80%)
+  ↓ Train    … 155 trajets — coords 342144→37474 pts (-89%)
+  ↓ Bateau   … 13 trajets — coords 382→107 pts (-72%)
+  ↓ Bus      … 93 trajets — coords 299161→35248 pts (-88%)
+  ↓ Voiture  … fatal : ni ceci ni aucun de ses répertoires parents n'est un dépôt git : .git
+
+[LOOP] Lancement update.py...
+====================================================
+  Où est Paolo ? — Update data.json + GitHub
+====================================================
+  ↓ Avion    … 10 trajets — coords 3198→639 pts (-80%)
+  ↓ Train    … 155 trajets — coords 342144→37474 pts (-89%)
+  ↓ Bateau   … 13 trajets — coords 382→107 pts (-72%)
+  ↓ Bus      … 93 trajets — coords 299161→35248 pts (-88%)
+  ↓ Voiture  … fatal : ni ceci ni aucun de ses répertoires parents n'est un dépôt git : .git
