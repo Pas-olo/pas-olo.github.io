@@ -225,27 +225,40 @@ def fetch_layer(layer):
 
 
 # ─── GIT PUSH ─────────────────────────────────────────────────────
+import subprocess
+from datetime import datetime
+
 def git_push():
     try:
         print("\n  🚀 Push GitHub...")
 
+        # 1. Nettoyage de sécurité en cas de vieux conflits
+        subprocess.run(["git", "merge", "--abort"], check=False, stderr=subprocess.DEVNULL)
+        subprocess.run(["git", "rebase", "--abort"], check=False, stderr=subprocess.DEVNULL)
+
+        # 2. Ajout explicite de data.json
         subprocess.run(["git", "add", "data.json"], check=True)
 
-        subprocess.run([
-            "git", "commit",
-            "-m", f"update data {datetime.now().strftime('%Y-%m-%d %H:%M')}"
-        ], check=True)
+        # 3. Vérification s'il y a quelque chose de nouveau à commiter
+        status = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True)
 
-        subprocess.run(["git", "stash"], check=True)
-        subprocess.run(["git", "pull", "--rebase"], check=True)
-        subprocess.run(["git", "stash", "pop"], check=False)
-        subprocess.run(["git", "push"], check=True)
+        if "data.json" in status.stdout:
+            # Des changements sont détectés, on commit
+            subprocess.run(
+                ["git", "commit", "-m", f"update data {datetime.now().strftime('%Y-%m-%d %H:%M')}"],
+                check=True
+            )
+            print("  📝 Modifications validées (commit)")
+        else:
+            print("  ℹ️ Aucun changement détecté dans data.json")
+
+        # 4. Push forcé sur la branche courante
+        subprocess.run(["git", "push", "origin", "HEAD", "--force"], check=True)
 
         print("  ✅ Push OK")
 
-    except subprocess.CalledProcessError:
-        print("  ⚠️ Rien à push ou erreur git (ignoré)")
-
+    except subprocess.CalledProcessError as e:
+        print(f"  ❌ Erreur Git lors de l'exécution : {e}")
 
 # ─── MAIN ─────────────────────────────────────────────────────────
 def main():
