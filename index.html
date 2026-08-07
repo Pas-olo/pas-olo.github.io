@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Où est Paolo ?</title>
+  <link rel="icon" type="image/gif" href="favicon.gif">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
@@ -53,7 +54,7 @@
       z-index: 1000;
     }
     .logo-text { font-size: 1.2rem; font-weight: 700; letter-spacing: -0.3px; }
-    .logo-text span { color: var(--pulse); }
+    .logo-text span { color: rgb(var(--pulse-rgb, 39, 174, 96)); }
 
     .header-right {
       margin-left: auto;
@@ -705,8 +706,7 @@
       if (currentMarker) map.removeLayer(currentMarker);
       const pulseIcon = L.divIcon({ className: 'leaflet-pulse-icon', iconSize: [18, 18], iconAnchor: [6, 6] });
       currentMarker = L.marker([lat, lon], { icon: pulseIcon }).addTo(map);
-      const el = currentMarker.getElement();
-      if (el) el.style.setProperty('--pulse-rgb', hexToRgbString(color));
+      document.documentElement.style.setProperty('--pulse-rgb', hexToRgbString(color));
     }
 
     function openCountriesModal(countries) {
