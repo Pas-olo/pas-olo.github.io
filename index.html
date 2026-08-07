@@ -112,6 +112,7 @@
       border: 1px solid #a9dfbf;
       padding: 3px 10px;
       border-radius: 20px;
+      cursor: help;
     }
     .live-dot {
       width: 6px;
@@ -335,18 +336,21 @@
 
     .no-data { padding: var(--space-4) 0; color: var(--muted); font-size: 0.83rem; text-align: center; }
 
-    /* ───────────────────────── MARQUEUR PULSE ───────────────────────── */
+    /* ───────────────────────── MARQUEUR PULSE ─────────────────────────
+       La couleur (--pulse-rgb) est injectée dynamiquement en JS selon le
+       dernier mode de transport utilisé (t.color du dernier trajet).
+       Fallback vert (39,174,96) si jamais rien n'est défini. */
     .leaflet-pulse-icon {
-      background: #27ae60;
+      background: rgb(var(--pulse-rgb, 39, 174, 96));
       border-radius: 50%;
       border: 2px solid white;
-      box-shadow: 0 0 0 0 rgba(39, 174, 96, 0.7);
+      box-shadow: 0 0 0 0 rgba(var(--pulse-rgb, 39, 174, 96), 0.7);
       animation: pulse-dot 1.8s infinite;
     }
     @keyframes pulse-dot {
-      0%   { box-shadow: 0 0 0 0 rgba(39, 174, 96, 0.7); }
-      70%  { box-shadow: 0 0 0 15px rgba(39, 174, 96, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(39, 174, 96, 0); }
+      0%   { box-shadow: 0 0 0 0 rgba(var(--pulse-rgb, 39, 174, 96), 0.7); }
+      70%  { box-shadow: 0 0 0 15px rgba(var(--pulse-rgb, 39, 174, 96), 0); }
+      100% { box-shadow: 0 0 0 0 rgba(var(--pulse-rgb, 39, 174, 96), 0); }
     }
 
     /* ───────────────────────── MODALE ───────────────────────── */
@@ -394,14 +398,14 @@
 <body>
 
   <header>
-    <div class="logo-text">📍 Où est <span>Paolo</span> ?</div>
+    <div class="logo-text">📍 Où est <span>Paolo & Sylvie</span> ?</div>
     <div class="header-right">
       <label class="overland-toggle" title="N'afficher que les trajets depuis le dernier vol pris">
         <input type="checkbox" id="overland-toggle" checked>
         <span class="toggle-track"><span class="toggle-thumb"></span></span>
         <span class="toggle-label-text">Depuis le dernier vol</span>
       </label>
-      <div class="live-badge"><div class="live-dot"></div>En direct</div>
+      <div class="live-badge" id="live-badge"><div class="live-dot"></div>En direct</div>
     </div>
   </header>
 
@@ -467,6 +471,18 @@
         + ' à ' + date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 
       return { relative, exact };
+    }
+
+    // Convertit un hex ("#4a90d9") en chaîne "R, G, B" pour l'injecter
+    // dans les rgba() du point pulsant.
+    function hexToRgbString(hex) {
+      if (!hex) return '39, 174, 96';
+      let h = hex.replace('#', '');
+      if (h.length === 3) h = h.split('').map(c => c + c).join('');
+      const num = parseInt(h, 16);
+      if (isNaN(num)) return '39, 174, 96';
+      const r = (num >> 16) & 255, g = (num >> 8) & 255, b = num & 255;
+      return `${r}, ${g}, ${b}`;
     }
 
     // ── DRAPEAUX / BASE DE DONNÉES PAYS ────────────────────────────────
@@ -684,10 +700,13 @@
       found.hitArea.openPopup();
     }
 
-    function setPulseMarker(lon, lat) {
+    // color: hex du dernier trajet (t.color), même palette que les tracés sur la carte.
+    function setPulseMarker(lon, lat, color) {
       if (currentMarker) map.removeLayer(currentMarker);
       const pulseIcon = L.divIcon({ className: 'leaflet-pulse-icon', iconSize: [18, 18], iconAnchor: [6, 6] });
       currentMarker = L.marker([lat, lon], { icon: pulseIcon }).addTo(map);
+      const el = currentMarker.getElement();
+      if (el) el.style.setProperty('--pulse-rgb', hexToRgbString(color));
     }
 
     function openCountriesModal(countries) {
@@ -745,6 +764,13 @@
       routesLayerGroup.clearLayers();
       tripLayers = [];
 
+      // Tooltip "Mis à jour" sur le badge En direct, indépendant de la vue filtrée
+      const updatedAt = formatRelativeUpdate(window.__updatedAtRaw);
+      const liveBadge = document.getElementById('live-badge');
+      if (liveBadge) {
+        liveBadge.title = `Mis à jour ${updatedAt.relative}${updatedAt.exact ? ' · ' + updatedAt.exact : ''}`;
+      }
+
       if (!trips.length) {
         sidebarContent.innerHTML = `<div class="no-data">✈️ Aucun trajet overland depuis le dernier vol pour l'instant.</div>`;
         return;
@@ -753,10 +779,11 @@
       drawLeafletRoutes(trips);
 
       // Positionner le marqueur sur le dernier trajet de la vue courante
+      // (couleur du point = mode de transport du dernier trajet)
       const latest = trips[0];
       if (latest.destCoord) {
         const [lon, lat] = latest.destCoord;
-        setPulseMarker(lon, lat);
+        setPulseMarker(lon, lat, latest.color);
         setTimeout(() => flyToCoords(lon, lat, 5), 500);
         document.getElementById('tip-city').textContent = `${latest.to} ${flag(latest.country)}`;
         document.getElementById('tip-date').textContent = `Dernière position · ${latest.country || ''} · ${formatDate(latest.date)}`;
@@ -770,8 +797,6 @@
       const tripsThisYear = trips.filter(t => parseDate(t.date).getFullYear() === year);
       const yearKm = tripsThisYear.reduce((s, t) => s + (t.km || 0), 0);
       const yearCo2 = tripsThisYear.reduce((s, t) => s + (t.co2Kg || 0), 0);
-
-      const updatedAt = formatRelativeUpdate(window.__updatedAtRaw);
 
       // Pays visités (sur la vue courante)
       const countriesMap = new Map();
@@ -832,10 +857,10 @@
               <div class="stat-value">${yearKm.toLocaleString('fr')}</div>
               <div class="stat-label">km cette année</div>
             </div>
-            <div class="stat-card stat-card-update" style="--stat-accent:#e08e45" title="Mis à jour le ${updatedAt.exact}">
-              <div class="stat-icon">🔄</div>
-              <div class="stat-update-value">${updatedAt.relative}</div>
-              <div class="stat-label">Mise à jour</div>
+            <div class="stat-card" style="--stat-accent:#e08e45">
+              <div class="stat-icon">🌱</div>
+              <div class="stat-value">${yearCo2.toLocaleString('fr', {maximumFractionDigits: 0})}</div>
+              <div class="stat-label">kgCO2e cette année</div>
             </div>
           </div>
         </div>

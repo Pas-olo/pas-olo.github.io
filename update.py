@@ -4,8 +4,8 @@ update.py — Télécharge les layers uMap de Paolo et push data.json sur GitHub
 Usage : python update.py
 """
 
-import json, urllib.request, time, subprocess
-from datetime import datetime
+import json, urllib.request, time, subprocess, hashlib
+from datetime import datetime, timedelta
 from pathlib import Path
 
 
@@ -163,16 +163,19 @@ def parse_date(s):
         return datetime.min
 
 
-def fetch_layer(layer):
-    print(f"  ↓ {layer['label']:8s} … ", end="", flush=True)
-
+def fetch_raw(layer):
+    """Télécharge le layer uMap et renvoie les bytes bruts (sans traitement)."""
     req = urllib.request.Request(
         layer["url"],
         headers={"User-Agent": "PaoloTracker/1.0"}
     )
-
     with urllib.request.urlopen(req, timeout=20) as resp:
-        data = json.loads(resp.read().decode())
+        return resp.read()
+
+
+def process_layer(layer, raw_bytes):
+    """Fait tout le travail coûteux : parsing, simplification RDP, calcul CO2."""
+    data = json.loads(raw_bytes.decode())
 
     trips = []
     epsilon = RDP_EPSILON.get(layer["type"], 0.0001)
@@ -220,14 +223,11 @@ def fetch_layer(layer):
         })
 
     reduction = round((1 - total_after / total_before) * 100) if total_before else 0
-    print(f"{len(trips)} trajets — coords {total_before}→{total_after} pts (-{reduction}%)")
+    print(f"coords {total_before}→{total_after} pts (-{reduction}%) — {len(trips)} trajets")
     return trips
 
 
 # ─── GIT PUSH ─────────────────────────────────────────────────────
-import subprocess
-from datetime import datetime
-
 def git_push():
     try:
         print("\n  🚀 Push GitHub...")
@@ -260,6 +260,7 @@ def git_push():
     except subprocess.CalledProcessError as e:
         print(f"  ❌ Erreur Git lors de l'exécution : {e}")
 
+
 # ─── MAIN ─────────────────────────────────────────────────────────
 def main():
     print("=" * 52)
@@ -268,23 +269,41 @@ def main():
 
     CACHE_DIR.mkdir(exist_ok=True)
     all_trips = []
+    any_changed = False
 
     for layer in LAYERS:
-        try:
-            trips = fetch_layer(layer)
+        cache_file = CACHE_DIR / f"{layer['type']}.json"
+        hash_file  = CACHE_DIR / f"{layer['type']}.hash"
 
-            cache_file = CACHE_DIR / f"{layer['type']}.json"
-            cache_file.write_text(json.dumps(trips, ensure_ascii=False, indent=2), encoding="utf-8")
+        print(f"  ↓ {layer['label']:8s} … ", end="", flush=True)
+
+        try:
+            raw = fetch_raw(layer)
+            new_hash = hashlib.md5(raw).hexdigest()
+            old_hash = hash_file.read_text(encoding="utf-8").strip() if hash_file.exists() else None
+
+            if new_hash == old_hash and cache_file.exists():
+                # Rien de nouveau côté uMap : on réutilise le résultat déjà calculé
+                print("inchangé, cache réutilisé (pas de recalcul)")
+                trips = json.loads(cache_file.read_text(encoding="utf-8"))
+            else:
+                trips = process_layer(layer, raw)
+                cache_file.write_text(json.dumps(trips, ensure_ascii=False, indent=2), encoding="utf-8")
+                hash_file.write_text(new_hash, encoding="utf-8")
+                any_changed = True
 
             all_trips.extend(trips)
 
         except Exception as e:
             print(f"ERREUR — {e}")
-            cache_file = CACHE_DIR / f"{layer['type']}.json"
-
             if cache_file.exists():
                 print(f"    ↻ Cache utilisé pour {layer['label']}")
                 all_trips.extend(json.loads(cache_file.read_text(encoding="utf-8")))
+
+    if not any_changed:
+        print("\n  😴 Aucun changement sur aucune layer — pas de recalcul pays/stats, pas de push.")
+        print("=" * 52)
+        return
 
     # Sort by date
     all_trips.sort(key=lambda t: parse_date(t["date"]), reverse=True)
@@ -344,8 +363,8 @@ def main():
 
     print("=" * 52)
 
-from datetime import datetime, timedelta
-def run_daily():
+
+def run_hourly():
     while True:
         print("\n[LOOP] Lancement update.py...")
 
@@ -355,15 +374,13 @@ def run_daily():
             print("[ERROR]", e)
 
         now = datetime.now()
-        next_run = (now + timedelta(days=1)).replace(
-            hour=0, minute=0, second=0, microsecond=0
-        )
+        next_run = (now + timedelta(hours=1)).replace(minute=0, second=0, microsecond=0)
 
         sleep_time = (next_run - datetime.now()).total_seconds()
 
-        print(f"[LOOP] Prochain run dans {int(sleep_time)} sec")
+        print(f"[LOOP] Prochain check dans {int(sleep_time)} sec")
         time.sleep(max(0, sleep_time))
 
 
 if __name__ == "__main__":
-    run_daily()
+    run_hourly()
