@@ -151,7 +151,7 @@ def coord_to_country(lon, lat, countries_data):
     for f in countries_data["features"]:
         if point_in_feature(lon, lat, f):
             props = f["properties"]
-            return props.get("NAME") or props.get("name") or ""
+            return props.get("NAME_FR") or props.get("NAME") or props.get("name") or ""
     return ""
 
 
