@@ -471,7 +471,6 @@
         headerTitle: '📍 Où est <span>Paolo & Sylvie</span> ?',
         overlandTitle: "N'afficher que les trajets depuis le dernier vol pris",
         overlandLabel: "Depuis le dernier vol",
-        live: "En direct",
         tooltipLoading: "Chargement de la carte...",
         sidebarLoading: "Chargement…",
         leafletError: '❌ <strong>Erreur Leaflet</strong><br>Vérifie ta connexion Internet.',
@@ -513,8 +512,7 @@
         pageTitle: "Where is Paolo?",
         headerTitle: '📍 Where are <span>Paolo & Sylvie</span>?',
         overlandTitle: "Only show trips since the last flight taken",
-        overlandLabel: "Since last flight",
-        live: "Live",
+        overlandLabel: "Since last flight",,
         tooltipLoading: "Loading map...",
         sidebarLoading: "Loading…",
         leafletError: '❌ <strong>Leaflet Error</strong><br>Check your Internet connection.',
@@ -572,7 +570,6 @@
       document.getElementById('logo-text').innerHTML = tr('headerTitle');
       document.getElementById('overland-toggle-label').title = tr('overlandTitle');
       document.getElementById('overland-toggle-text').textContent = tr('overlandLabel');
-      document.getElementById('live-text').textContent = tr('live');
       document.getElementById('tip-date').textContent = window.__dataLoaded ? document.getElementById('tip-date').textContent : tr('tooltipLoading');
       const initialLoading = document.getElementById('initial-loading');
       if (initialLoading) initialLoading.textContent = tr('sidebarLoading');
@@ -934,10 +931,6 @@
 
       // Tooltip "Mis à jour" sur le badge En direct, indépendant de la vue filtrée
       const updatedAt = formatRelativeUpdate(window.__updatedAtRaw);
-      const liveBadge = document.getElementById('live-badge');
-      if (liveBadge) {
-        liveBadge.title = tr('updatedAt', updatedAt.relative, updatedAt.exact);
-      }
 
       if (!trips.length) {
         sidebarContent.innerHTML = `<div class="no-data">${tr('noOverlandData')}</div>`;
