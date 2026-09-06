@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Où est Paolo ?</title>
+  <title id="page-title">Où est Paolo ?</title>
   <link rel="icon" type="image/gif" href="favicon.gif">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -101,6 +101,39 @@
     }
     .overland-toggle input:checked + .toggle-track .toggle-thumb {
       transform: translateX(13px);
+    }
+
+    .lang-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      font-size: 0.72rem;
+      font-weight: 700;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+      cursor: pointer;
+      user-select: none;
+      flex-shrink: 0;
+    }
+    .lang-toggle button {
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      padding: 5px 11px;
+      cursor: pointer;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      transition: background 0.15s, color 0.15s;
+    }
+    .lang-toggle button.is-active {
+      background: var(--pulse);
+      color: white;
+    }
+    .lang-toggle button:not(.is-active):hover {
+      background: var(--border);
     }
 
     .live-badge {
@@ -399,14 +432,18 @@
 <body>
 
   <header>
-    <div class="logo-text">📍 Où est <span>Paolo & Sylvie</span> ?</div>
+    <div class="logo-text" id="logo-text">📍 Où est <span>Paolo & Sylvie</span> ?</div>
     <div class="header-right">
-      <label class="overland-toggle" title="N'afficher que les trajets depuis le dernier vol pris">
+      <div class="lang-toggle" id="lang-toggle">
+        <button type="button" data-lang="fr" id="lang-btn-fr">FR</button>
+        <button type="button" data-lang="en" id="lang-btn-en">EN</button>
+      </div>
+      <label class="overland-toggle" id="overland-toggle-label" title="N'afficher que les trajets depuis le dernier vol pris">
         <input type="checkbox" id="overland-toggle" checked>
         <span class="toggle-track"><span class="toggle-thumb"></span></span>
-        <span class="toggle-label-text">Depuis le dernier vol</span>
+        <span class="toggle-label-text" id="overland-toggle-text">Depuis le dernier vol</span>
       </label>
-      <div class="live-badge" id="live-badge"><div class="live-dot"></div>En direct</div>
+      <div class="live-badge" id="live-badge"><div class="live-dot"></div><span id="live-text">En direct</span></div>
     </div>
   </header>
 
@@ -420,16 +457,148 @@
     </div>
     <div class="sidebar">
       <div id="sidebar-content">
-        <div class="no-data">Chargement…</div>
+        <div class="no-data" id="initial-loading">Chargement…</div>
       </div>
     </div>
   </div>
 
   <script>
     const sidebarContent = document.getElementById('sidebar-content');
+
+    // ── I18N ────────────────────────────────────────────────────────────
+    const I18N = {
+      fr: {
+        pageTitle: "Où est Paolo ?",
+        headerTitle: '📍 Où est <span>Paolo & Sylvie</span> ?',
+        overlandTitle: "N'afficher que les trajets depuis le dernier vol pris",
+        overlandLabel: "Depuis le dernier vol",
+        live: "En direct",
+        tooltipLoading: "Chargement de la carte...",
+        sidebarLoading: "Chargement…",
+        leafletError: '❌ <strong>Erreur Leaflet</strong><br>Vérifie ta connexion Internet.',
+        leafletErrorTip: "Erreur internet.",
+        noOverlandData: "✈️ Aucun trajet overland depuis le dernier vol pour l'instant.",
+        missingData: "⚠️ Données manquantes",
+        loadError: "❌ Erreur de chargement des données.",
+        lastPosition: "Dernière position",
+        statsSinceFlight: "Statistiques (depuis le dernier vol)",
+        statsGlobal: "Statistiques globales",
+        totalKm: "Total km",
+        totalCo2: "Total kgCO2e",
+        yearKm: "km cette année",
+        yearCo2: "kgCO2e cette année",
+        countriesVisited: (n) => `Pays visités (${n})`,
+        moreCountries: (n) => `+${n} de plus`,
+        transportModes: "Modes de transport",
+        recentTrips: "Trajets récents",
+        tripDefault: "Trajet",
+        tripDefaultPopup: "Voyage",
+        otherLabel: "Autre",
+        unknownCountry: "Pays inconnu",
+        close: "Fermer",
+        countriesModalTitle: (n) => `🌍 Pays visités (${n})`,
+        updatedAt: (rel, exact) => `Mis à jour ${rel}${exact ? ' · ' + exact : ''}`,
+        unknownUpdate: "Inconnue",
+        atTime: " à ",
+        justNow: "à l'instant",
+        minAgo: (n) => `il y a ${n} min`,
+        hAgo: (n) => `il y a ${n}h`,
+        yesterday: "hier",
+        daysAgo: (n) => `il y a ${n} jours`,
+        months: ['jan', 'fév', 'mar', 'avr', 'mai', 'jun', 'jul', 'aoû', 'sep', 'oct', 'nov', 'déc'],
+        dateLocale: 'fr-FR',
+        numberLocale: 'fr',
+        continents: { Europe: 'Europe', Asie: 'Asie', Afrique: 'Afrique', Amériques: 'Amériques', Océanie: 'Océanie', Autre: 'Autre' }
+      },
+      en: {
+        pageTitle: "Where is Paolo?",
+        headerTitle: '📍 Where are <span>Paolo & Sylvie</span>?',
+        overlandTitle: "Only show trips since the last flight taken",
+        overlandLabel: "Since last flight",
+        live: "Live",
+        tooltipLoading: "Loading map...",
+        sidebarLoading: "Loading…",
+        leafletError: '❌ <strong>Leaflet Error</strong><br>Check your Internet connection.',
+        leafletErrorTip: "Internet error.",
+        noOverlandData: "✈️ No overland trip since the last flight yet.",
+        missingData: "⚠️ Missing data",
+        loadError: "❌ Error loading data.",
+        lastPosition: "Last position",
+        statsSinceFlight: "Statistics (since last flight)",
+        statsGlobal: "Global statistics",
+        totalKm: "Total km",
+        totalCo2: "Total kgCO2e",
+        yearKm: "km this year",
+        yearCo2: "kgCO2e this year",
+        countriesVisited: (n) => `Countries visited (${n})`,
+        moreCountries: (n) => `+${n} more`,
+        transportModes: "Transport modes",
+        recentTrips: "Recent trips",
+        tripDefault: "Trip",
+        tripDefaultPopup: "Trip",
+        otherLabel: "Other",
+        unknownCountry: "Unknown country",
+        close: "Close",
+        countriesModalTitle: (n) => `🌍 Countries visited (${n})`,
+        updatedAt: (rel, exact) => `Updated ${rel}${exact ? ' · ' + exact : ''}`,
+        unknownUpdate: "Unknown",
+        atTime: " at ",
+        justNow: "just now",
+        minAgo: (n) => `${n} min ago`,
+        hAgo: (n) => `${n}h ago`,
+        yesterday: "yesterday",
+        daysAgo: (n) => `${n} days ago`,
+        months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+        dateLocale: 'en-US',
+        numberLocale: 'en',
+        continents: { Europe: 'Europe', Asie: 'Asia', Afrique: 'Africa', Amériques: 'Americas', Océanie: 'Oceania', Autre: 'Other' }
+      }
+    };
+
+    function detectLang() {
+      const nav = ((navigator.languages && navigator.languages[0]) || navigator.language || 'fr').toLowerCase();
+      return nav.startsWith('fr') ? 'fr' : 'en';
+    }
+
+    let currentLang = detectLang();
+
+    function tr(key, ...args) {
+      const entry = I18N[currentLang][key];
+      return typeof entry === 'function' ? entry(...args) : entry;
+    }
+
+    function applyStaticTranslations() {
+      document.documentElement.lang = currentLang;
+      document.getElementById('page-title').textContent = tr('pageTitle');
+      document.getElementById('logo-text').innerHTML = tr('headerTitle');
+      document.getElementById('overland-toggle-label').title = tr('overlandTitle');
+      document.getElementById('overland-toggle-text').textContent = tr('overlandLabel');
+      document.getElementById('live-text').textContent = tr('live');
+      document.getElementById('tip-date').textContent = window.__dataLoaded ? document.getElementById('tip-date').textContent : tr('tooltipLoading');
+      const initialLoading = document.getElementById('initial-loading');
+      if (initialLoading) initialLoading.textContent = tr('sidebarLoading');
+
+      document.getElementById('lang-btn-fr').classList.toggle('is-active', currentLang === 'fr');
+      document.getElementById('lang-btn-en').classList.toggle('is-active', currentLang === 'en');
+    }
+
+    applyStaticTranslations();
+
+    document.getElementById('lang-btn-fr').addEventListener('click', () => setLang('fr'));
+    document.getElementById('lang-btn-en').addEventListener('click', () => setLang('en'));
+
+    function setLang(lang) {
+      if (lang === currentLang) return;
+      currentLang = lang;
+      applyStaticTranslations();
+      if (window.__dataLoaded) {
+        renderApp(getCurrentTrips());
+      }
+    }
+
     if (typeof L === 'undefined') {
-      sidebarContent.innerHTML = `<div class="no-data">❌ <strong>Erreur Leaflet</strong><br>Vérifie ta connexion Internet.</div>`;
-      document.getElementById('tip-date').textContent = "Erreur internet.";
+      sidebarContent.innerHTML = `<div class="no-data">${tr('leafletError')}</div>`;
+      document.getElementById('tip-date').textContent = tr('leafletErrorTip');
       throw new Error("Leaflet non défini");
     }
 
@@ -442,14 +611,14 @@
     function formatDate(s) {
       if (!s) return '';
       const [d, m, y] = s.split('/');
-      const mo = ['jan', 'fév', 'mar', 'avr', 'mai', 'jun', 'jul', 'aoû', 'sep', 'oct', 'nov', 'déc'];
+      const mo = tr('months');
       return `${parseInt(d)} ${mo[parseInt(m) - 1]} ${y}`;
     }
 
     // Accepte une date ISO ("2026-06-22T14:32:00") ou un format "lisible" générique.
     // Si le format n'est pas parsable, on retombe sur l'affichage brut.
     function formatRelativeUpdate(raw) {
-      if (!raw) return { relative: 'Inconnue', exact: '' };
+      if (!raw) return { relative: tr('unknownUpdate'), exact: '' };
       const m = raw.match(/(\d{2})\/(\d{2})\/(\d{4}) à (\d{2}):(\d{2})/);
 	const date = m ? new Date(`${m[3]}-${m[2]}-${m[1]}T${m[4]}:${m[5]}:00`) : new Date(raw);
       if (isNaN(date.getTime())) return { relative: raw, exact: '' };
@@ -461,15 +630,15 @@
       const diffJ = Math.round(diffMs / 86400000);
 
       let relative;
-      if (diffMin < 1) relative = "à l'instant";
-      else if (diffMin < 60) relative = `il y a ${diffMin} min`;
-      else if (diffH < 24) relative = `il y a ${diffH}h`;
-      else if (diffJ === 1) relative = 'hier';
-      else if (diffJ < 7) relative = `il y a ${diffJ} jours`;
-      else relative = date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+      if (diffMin < 1) relative = tr('justNow');
+      else if (diffMin < 60) relative = tr('minAgo', diffMin);
+      else if (diffH < 24) relative = tr('hAgo', diffH);
+      else if (diffJ === 1) relative = tr('yesterday');
+      else if (diffJ < 7) relative = tr('daysAgo', diffJ);
+      else relative = date.toLocaleDateString(tr('dateLocale'), { day: 'numeric', month: 'short' });
 
-      const exact = date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
-        + ' à ' + date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+      const exact = date.toLocaleDateString(tr('dateLocale'), { day: 'numeric', month: 'short', year: 'numeric' })
+        + tr('atTime') + date.toLocaleTimeString(tr('dateLocale'), { hour: '2-digit', minute: '2-digit' });
 
       return { relative, exact };
     }
@@ -638,11 +807,11 @@
           </div>
           <div class="tp-meta">
             <span class="badge badge-date">📅 ${formatDate(t.date)}</span>
-            <span class="badge badge-km">📏 ${t.km.toLocaleString('fr')} km</span>
-            <span class="badge badge-tp">${t.emoji || '✈️'} ${t.label || 'Voyage'}</span>
-            <span class="badge badge-co2">🌱 ${(t.co2Kg || 0).toLocaleString('fr', {maximumFractionDigits: 1})} kgCO2e</span>
+            <span class="badge badge-km">📏 ${t.km.toLocaleString(tr('numberLocale'))} km</span>
+            <span class="badge badge-tp">${t.emoji || '✈️'} ${t.label || tr('tripDefaultPopup')}</span>
+            <span class="badge badge-co2">🌱 ${(t.co2Kg || 0).toLocaleString(tr('numberLocale'), {maximumFractionDigits: 1})} kgCO2e</span>
           </div>
-          <div class="tp-country">${flag(t.country)} ${t.country || 'Pays inconnu'}</div>
+          <div class="tp-country">${flag(t.country)} ${t.country || tr('unknownCountry')}</div>
         </div>`;
     }
 
@@ -724,12 +893,12 @@
       overlay.innerHTML = `
         <div class="modal-card">
           <div class="modal-head">
-            <div class="modal-title">🌍 Pays visités (${countries.length})</div>
-            <button class="modal-close" aria-label="Fermer">✕</button>
+            <div class="modal-title">${tr('countriesModalTitle', countries.length)}</div>
+            <button class="modal-close" aria-label="${tr('close')}">✕</button>
           </div>
           ${continents.map(cont => `
             <div class="continent-block">
-              <div class="continent-title">${cont}</div>
+              <div class="continent-title">${tr('continents')[cont] || cont}</div>
               <div class="continent-countries">
                 ${byContinent[cont].map(c => `<div class="country-tag">${c.flag} ${c.name}</div>`).join('')}
               </div>
@@ -768,11 +937,11 @@
       const updatedAt = formatRelativeUpdate(window.__updatedAtRaw);
       const liveBadge = document.getElementById('live-badge');
       if (liveBadge) {
-        liveBadge.title = `Mis à jour ${updatedAt.relative}${updatedAt.exact ? ' · ' + updatedAt.exact : ''}`;
+        liveBadge.title = tr('updatedAt', updatedAt.relative, updatedAt.exact);
       }
 
       if (!trips.length) {
-        sidebarContent.innerHTML = `<div class="no-data">✈️ Aucun trajet overland depuis le dernier vol pour l'instant.</div>`;
+        sidebarContent.innerHTML = `<div class="no-data">${tr('noOverlandData')}</div>`;
         return;
       }
 
@@ -786,7 +955,7 @@
         setPulseMarker(lon, lat, latest.color);
         setTimeout(() => flyToCoords(lon, lat, 5), 500);
         document.getElementById('tip-city').textContent = `${latest.to} ${flag(latest.country)}`;
-        document.getElementById('tip-date').textContent = `Dernière position · ${latest.country || ''} · ${formatDate(latest.date)}`;
+        document.getElementById('tip-date').textContent = `${tr('lastPosition')} · ${latest.country || ''} · ${formatDate(latest.date)}`;
       }
 
       // Stats recalculées sur la vue courante (overland ou complète)
@@ -814,7 +983,7 @@
       const byType = {};
       trips.forEach(t => {
         const type = t.type || 'unknown';
-        if (!byType[type]) byType[type] = { km: 0, co2: 0, label: t.label || 'Autre', emoji: t.emoji || '✈️', color: t.color || '#4a90d9' };
+        if (!byType[type]) byType[type] = { km: 0, co2: 0, label: t.label || tr('otherLabel'), emoji: t.emoji || '✈️', color: t.color || '#4a90d9' };
         byType[type].km += (t.km || 0);
         byType[type].co2 += (t.co2Kg || 0);
       });
@@ -823,7 +992,7 @@
 
       sidebarContent.innerHTML = `
         <div class="sidebar-section">
-          <div class="section-label">Dernière position</div>
+          <div class="section-label">${tr('lastPosition')}</div>
           <div class="last-trip" id="last-trip-card">
             <div class="trip-route">
               <span class="trip-from">${latest.from}</span>
@@ -832,49 +1001,49 @@
             </div>
             <div class="trip-meta">
               <span class="badge badge-date">📅 ${formatDate(latest.date)}</span>
-              <span class="badge badge-km">📏 ${latest.km.toLocaleString('fr')} km</span>
-              <span class="badge badge-tp">${latest.emoji || '✈️'} ${latest.label || 'Trajet'}</span>
-              <span class="badge badge-co2">🌱 ${(latest.co2Kg || 0).toLocaleString('fr', {maximumFractionDigits: 1})} kgCO2e</span>
+              <span class="badge badge-km">📏 ${latest.km.toLocaleString(tr('numberLocale'))} km</span>
+              <span class="badge badge-tp">${latest.emoji || '✈️'} ${latest.label || tr('tripDefault')}</span>
+              <span class="badge badge-co2">🌱 ${(latest.co2Kg || 0).toLocaleString(tr('numberLocale'), {maximumFractionDigits: 1})} kgCO2e</span>
             </div>
           </div>
         </div>
 
         <div class="sidebar-section">
-          <div class="section-label">Statistiques ${showOverlandOnly ? '(depuis le dernier vol)' : 'globales'}</div>
+          <div class="section-label">${showOverlandOnly ? tr('statsSinceFlight') : tr('statsGlobal')}</div>
           <div class="stats-grid">
             <div class="stat-card" style="--stat-accent:#4a90d9">
               <div class="stat-icon">🌍</div>
-              <div class="stat-value">${totalKm.toLocaleString('fr')}</div>
-              <div class="stat-label">Total km</div>
+              <div class="stat-value">${totalKm.toLocaleString(tr('numberLocale'))}</div>
+              <div class="stat-label">${tr('totalKm')}</div>
             </div>
             <div class="stat-card" style="--stat-accent:#2e7d32">
               <div class="stat-icon">🌱</div>
-              <div class="stat-value">${totalCo2.toLocaleString('fr', {maximumFractionDigits: 0})}</div>
-              <div class="stat-label">Total kgCO2e</div>
+              <div class="stat-value">${totalCo2.toLocaleString(tr('numberLocale'), {maximumFractionDigits: 0})}</div>
+              <div class="stat-label">${tr('totalCo2')}</div>
             </div>
             <div class="stat-card" style="--stat-accent:#27ae60">
               <div class="stat-icon">📅</div>
-              <div class="stat-value">${yearKm.toLocaleString('fr')}</div>
-              <div class="stat-label">km cette année</div>
+              <div class="stat-value">${yearKm.toLocaleString(tr('numberLocale'))}</div>
+              <div class="stat-label">${tr('yearKm')}</div>
             </div>
             <div class="stat-card" style="--stat-accent:#e08e45">
               <div class="stat-icon">🌱</div>
-              <div class="stat-value">${yearCo2.toLocaleString('fr', {maximumFractionDigits: 0})}</div>
-              <div class="stat-label">kgCO2e cette année</div>
+              <div class="stat-value">${yearCo2.toLocaleString(tr('numberLocale'), {maximumFractionDigits: 0})}</div>
+              <div class="stat-label">${tr('yearCo2')}</div>
             </div>
           </div>
         </div>
 
         <div class="sidebar-section">
-          <div class="section-label">Pays visités (${countries.length})</div>
+          <div class="section-label">${tr('countriesVisited', countries.length)}</div>
           <div class="countries-list">
             ${countriesPreview.map(c => `<div class="country-tag">${c.flag} ${c.name}</div>`).join('')}
-            ${countriesHidden > 0 ? `<button class="country-tag-more" id="btn-more-countries">+${countriesHidden} de plus</button>` : ''}
+            ${countriesHidden > 0 ? `<button class="country-tag-more" id="btn-more-countries">${tr('moreCountries', countriesHidden)}</button>` : ''}
           </div>
         </div>
 
         <div class="sidebar-section">
-          <div class="section-label">Modes de transport</div>
+          <div class="section-label">${tr('transportModes')}</div>
           <div class="transport-list">
             ${Object.values(byType).map(b => `
               <div class="transport-row">
@@ -886,14 +1055,14 @@
                     <div class="transport-bar-wrap">
                       <div class="transport-bar" style="width:${(b.km / maxKm) * 100}%; background:${b.color}"></div>
                     </div>
-                    <div class="transport-val">${b.km.toLocaleString('fr')} km</div>
+                    <div class="transport-val">${b.km.toLocaleString(tr('numberLocale'))} km</div>
                   </div>
                   <div class="transport-bar-group">
                     <span class="transport-bar-tag">CO2e</span>
                     <div class="transport-bar-wrap">
                       <div class="transport-bar" style="width:${(b.co2 / maxCo2) * 100}%; background:${b.color}; opacity:0.5"></div>
                     </div>
-                    <div class="transport-val">${b.co2.toLocaleString('fr', {maximumFractionDigits: 0})} kgCO2e</div>
+                    <div class="transport-val">${b.co2.toLocaleString(tr('numberLocale'), {maximumFractionDigits: 0})} kgCO2e</div>
                   </div>
                 </div>
               </div>
@@ -902,14 +1071,14 @@
         </div>
 
         <div class="sidebar-section">
-          <div class="section-label">Trajets récents</div>
+          <div class="section-label">${tr('recentTrips')}</div>
           <div class="trips-list">
             ${trips.slice(0, 10).map((t, idx) => `
               <div class="trip-item" data-index="${idx}">
                 <div class="trip-item-icon" style="background:#eafaf1">${t.emoji || '✈️'}</div>
                 <div class="trip-item-route">
                   <div class="trip-item-from-to">${t.from} → ${t.to}</div>
-                  <div class="trip-item-date">${formatDate(t.date)} · ${t.km} km ·  ${(t.co2Kg || 0).toLocaleString('fr', {maximumFractionDigits: 1})} kgCO2e</div>
+                  <div class="trip-item-date">${formatDate(t.date)} · ${t.km} km ·  ${(t.co2Kg || 0).toLocaleString(tr('numberLocale'), {maximumFractionDigits: 1})} kgCO2e</div>
                 </div>
               </div>
             `).join('')}
@@ -941,12 +1110,13 @@
       })
       .then(data => {
         if (!data.trips || !data.trips.length) {
-          sidebarContent.innerHTML = `<div class="no-data">⚠️ Données manquantes</div>`;
+          sidebarContent.innerHTML = `<div class="no-data">${tr('missingData')}</div>`;
           return;
         }
 
         allTrips = data.trips;
         window.__updatedAtRaw = data.updated_at;
+        window.__dataLoaded = true;
 
         renderApp(getCurrentTrips());
 
@@ -958,7 +1128,7 @@
       })
       .catch(err => {
         console.error(err);
-        sidebarContent.innerHTML = `<div class="no-data">❌ Erreur de chargement des données.</div>`;
+        sidebarContent.innerHTML = `<div class="no-data">${tr('loadError')}</div>`;
       });
   </script>
 </body>
