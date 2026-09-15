@@ -164,14 +164,30 @@ def parse_date(s):
 
 
 def fetch_raw(layer):
-    """Télécharge le layer uMap et renvoie les bytes bruts (sans traitement)."""
+    busted_url = f"{layer['url']}?_={int(time.time())}"
     req = urllib.request.Request(
-        layer["url"],
-        headers={"User-Agent": "PaoloTracker/1.0"}
+        busted_url,
+        headers={
+            "User-Agent": "PaoloTracker/1.0",
+            "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
+            "Pragma": "no-cache",
+        }
     )
     with urllib.request.urlopen(req, timeout=20) as resp:
         return resp.read()
 
+def normalize_for_hash(raw_bytes):
+    try:
+        parsed = json.loads(raw_bytes.decode("utf-8"))
+        return json.dumps(parsed, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    except Exception:
+        # si le parsing échoue, on retombe sur les bytes bruts
+        return raw_bytes
+
+
+def compute_hash(raw_bytes):
+    normalized = normalize_for_hash(raw_bytes)
+    return hashlib.sha256(normalized).hexdigest()
 
 def process_layer(layer, raw_bytes):
     """Fait tout le travail coûteux : parsing, simplification RDP, calcul CO2."""
@@ -279,7 +295,7 @@ def main():
 
         try:
             raw = fetch_raw(layer)
-            new_hash = hashlib.md5(raw).hexdigest()
+            new_hash = compute_hash(raw)
             old_hash = hash_file.read_text(encoding="utf-8").strip() if hash_file.exists() else None
 
             if new_hash == old_hash and cache_file.exists():
